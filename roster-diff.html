@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<title>Roster Diff // UNIT TOOLS</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+  :root{
+    --green:#4B5320;--green-lt:#6B7A32;--tan:#C8B560;--tan-lt:#DDD090;
+    --dark:#1A1F0E;--darker:#0F1208;--fg:#E8E4D0;--fg-dim:#9A9680;
+    --red:#CC2200;--ok:#5A8A30;
+    --panel:#222810;--border:#3A4018;
+    --mono:'Share Tech Mono',monospace;--cond:'Barlow Condensed',sans-serif;--body:'Barlow',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--darker);color:var(--fg);font-family:var(--body);min-height:100vh;
+    background-image:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(74,83,32,.03) 2px,rgba(74,83,32,.03) 4px);}
+  header{background:var(--green);border-bottom:3px solid var(--tan);padding:0 2rem;
+    display:flex;align-items:center;gap:1.25rem;height:96px;position:sticky;top:0;z-index:100;}
+  .he img{height:68px;width:68px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4));}
+  .ht h1{font-family:var(--cond);font-size:1.95rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#fff;line-height:1;}
+  .ht p{font-family:var(--mono);font-size:.85rem;color:var(--tan-lt);letter-spacing:.08em;margin-top:4px;}
+  .ht .made{font-size:.55rem;color:var(--tan-lt);letter-spacing:.06em;margin-top:2px;opacity:.7;}
+  .hb{margin-left:auto;font-family:var(--mono);font-size:.85rem;color:var(--tan);text-align:right;line-height:1.6;white-space:pre;}
+  .back-bar{background:var(--dark);border-bottom:1px solid var(--border);padding:.5rem 1.5rem;display:flex;align-items:center;gap:.75rem;}
+  .back-btn{font-family:var(--mono);font-size:.75rem;color:var(--tan);text-decoration:none;}
+  .back-sep,.back-cur{font-family:var(--mono);font-size:.75rem;color:var(--fg-dim);}
+  main{max-width:960px;margin:0 auto;padding:2rem 1rem;}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:4px;margin-bottom:1.25rem;overflow:hidden;}
+  .ph{background:var(--green);padding:.7rem 1rem;display:flex;align-items:center;gap:.75rem;}
+  .ph h2{font-family:var(--cond);font-size:1rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#fff;}
+  .ph .tag{margin-left:auto;font-family:var(--mono);font-size:.6rem;color:var(--tan);background:rgba(0,0,0,.3);padding:2px 8px;border-radius:2px;}
+  .pb{padding:1.25rem;}
+  .upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;}
+  @media(max-width:600px){.upload-grid{grid-template-columns:1fr;}}
+  .uz{border:2px dashed var(--border);border-radius:4px;padding:1.5rem 1rem;text-align:center;
+    cursor:pointer;transition:all .2s;position:relative;background:rgba(0,0,0,.2);}
+  .uz:hover{border-color:var(--tan);}
+  .uz.has{border-color:var(--ok);border-style:solid;background:rgba(90,138,48,.08);}
+  .uz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+  .uz .icon{font-size:2rem;margin-bottom:.5rem;display:block;}
+  .uz .lbl{font-family:var(--cond);font-size:.85rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--fg);display:block;margin-bottom:.25rem;}
+  .uz .sub{font-family:var(--mono);font-size:.6rem;color:var(--tan);display:block;margin-bottom:.2rem;}
+  .uz .hint{font-family:var(--mono);font-size:.65rem;color:var(--fg-dim);}
+  .uz .fname{display:none;font-family:var(--mono);font-size:.7rem;color:var(--ok);margin-top:.5rem;word-break:break-all;}
+  .uz.has .fname{display:block;}
+  .uz.has .hint{display:none;}
+  .troop-row{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-top:1rem;}
+  .tz{border:2px dashed var(--border);border-radius:4px;padding:.9rem 1rem;text-align:center;
+    cursor:pointer;transition:all .2s;position:relative;}
+  .tz:hover{border-color:var(--tan);}
+  .tz.has{border-color:var(--ok);border-style:solid;}
+  .tz input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+  .tz .tl{font-family:var(--cond);font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--fg-dim);display:block;margin-bottom:.2rem;}
+  .tz .tf{font-family:var(--mono);font-size:.65rem;color:var(--ok);}
+  .badges{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem;}
+  .badge{flex:1;min-width:120px;background:var(--dark);border:1px solid var(--border);border-radius:4px;padding:.6rem .75rem;text-align:center;}
+  .badge .num{font-family:var(--cond);font-size:2rem;font-weight:800;line-height:1;}
+  .badge .lbl{font-family:var(--mono);font-size:.6rem;color:var(--fg-dim);letter-spacing:.08em;margin-top:2px;}
+  .badge.added   .num{color:#66CC44;}
+  .badge.removed .num{color:#FF5533;}
+  .badge.changed .num{color:#FFAA22;}
+  .badge.gained  .num{color:#44AAFF;}
+  .badge.lost    .num{color:#FF6688;}
+  .badge.expired .num{color:#FF4422;}
+  .ds-title{font-family:var(--cond);font-size:.85rem;font-weight:700;letter-spacing:.12em;
+    text-transform:uppercase;padding:.4rem .75rem;border-radius:3px 3px 0 0;margin-bottom:0;}
+  .ds-title.added  {background:rgba(102,204,68,.15);color:#66CC44;border:1px solid rgba(102,204,68,.3);}
+  .ds-title.removed{background:rgba(255,85,51,.15); color:#FF5533;border:1px solid rgba(255,85,51,.3);}
+  .ds-title.changed{background:rgba(255,170,34,.15);color:#FFAA22;border:1px solid rgba(255,170,34,.3);}
+  .dt{width:100%;border-collapse:collapse;font-size:.78rem;}
+  .dt th{font-family:var(--cond);font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    padding:.35rem .75rem;text-align:left;background:var(--dark);color:var(--fg-dim);border:1px solid var(--border);}
+  .dt td{padding:.3rem .75rem;font-family:var(--mono);font-size:.72rem;border:1px solid var(--border);color:var(--fg);}
+  .dt tr:nth-child(even) td{background:rgba(0,0,0,.12);}
+  .pill{display:inline-block;font-family:var(--mono);font-size:.6rem;padding:1px 5px;border-radius:10px;margin:1px;
+    background:rgba(75,83,32,.3);border:1px solid var(--border);color:var(--tan);}
+  .pill.new{background:rgba(68,170,255,.15);border-color:#44AAFF;color:#44AAFF;}
+  .pill.lost{background:rgba(255,102,136,.15);border-color:#FF6688;color:#FF6688;}
+  .pill.exp{background:rgba(255,68,34,.15);border-color:#FF4422;color:#FF4422;}
+  .btn{font-family:var(--cond);font-size:1rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+    padding:.75rem 2rem;border:none;border-radius:3px;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:.5rem;}
+  .btn-primary{background:var(--ok);color:#fff;border:2px solid #6AAA38;width:100%;justify-content:center;font-size:1.1rem;}
+  .btn-primary:hover:not(:disabled){background:#6AAA38;}
+  .btn-primary:disabled{opacity:.4;cursor:not-allowed;}
+  .btn-dl{background:var(--dark);color:var(--tan);border:2px solid var(--tan);
+    text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
+    padding:.6rem 1.5rem;font-family:var(--cond);font-size:.95rem;font-weight:700;
+    letter-spacing:.15em;text-transform:uppercase;border-radius:3px;margin:.25rem;}
+  .btn-dl:hover{background:var(--tan);color:var(--dark);}
+  .err{background:rgba(204,34,0,.1);border:1px solid #CC2200;border-radius:4px;
+    padding:.75rem 1rem;font-family:var(--mono);font-size:.8rem;color:#FF6655;margin:.75rem 0;}
+  .hidden{display:none!important;}
+  .spin-wrap{display:none;align-items:center;gap:.75rem;padding:.75rem;font-family:var(--mono);font-size:.75rem;color:var(--tan);}
+  .spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--tan);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .success{background:rgba(90,138,48,.15);border:1px solid var(--ok);border-radius:4px;
+    padding:.75rem 1rem;font-family:var(--cond);font-size:.9rem;font-weight:700;color:#88CC44;text-align:center;margin-bottom:1rem;}
+  .no-changes{font-family:var(--mono);font-size:.8rem;color:var(--ok);padding:1rem;text-align:center;
+    background:rgba(90,138,48,.1);border:1px solid var(--ok);border-radius:4px;}
+  .dl-row{display:flex;flex-wrap:wrap;justify-content:center;}
+  .ds{margin-bottom:1.25rem;}
+</style>
+</head>
+<body>
+<header>
+  <div class="he"><img src="assets/icon.png" alt="Unit Tools"></div>
+  <div class="ht">
+    <h1>UNIT TOOLS</h1>
+    <p>2225 EN CO // ADMINISTRATIVE TOOLKIT</p>
+    <p class="made">MADE BY: SGT SONNIER, JOHN (WIP)</p>
+  </div>
+  <div class="hb" id="clock"></div>
+</header>
+<div class="back-bar">
+  <a class="back-btn" href="index.html">← BACK</a>
+  <span class="back-sep">//</span>
+  <span class="back-cur">ROSTER DIFF</span>
+</div>
+<main>
+
+  <div class="panel">
+    <div class="ph"><h2>Step 1 — Upload Two GCSS Reports</h2><span class="tag">REQUIRED</span></div>
+    <div class="pb">
+      <div class="upload-grid">
+        <div class="uz" id="uz-old">
+          <input type="file" id="f-old" accept=".xlsx,.xls" onchange="fileSelected('old')">
+          <span class="icon">📂</span>
+          <span class="lbl">Older Report</span>
+          <span class="sub">GCSS EXPORT — BASELINE</span>
+          <span class="hint">The earlier of the two reports</span>
+          <span class="fname" id="fn-old"></span>
+        </div>
+        <div class="uz" id="uz-new">
+          <input type="file" id="f-new" accept=".xlsx,.xls" onchange="fileSelected('new')">
+          <span class="icon">📥</span>
+          <span class="lbl">Newer Report</span>
+          <span class="sub">GCSS EXPORT — CURRENT</span>
+          <span class="hint">The more recent of the two reports</span>
+          <span class="fname" id="fn-new"></span>
+        </div>
+      </div>
+      <div style="margin-top:1rem;">
+        <div style="font-family:var(--mono);font-size:.65rem;color:var(--fg-dim);margin-bottom:.5rem;letter-spacing:.06em;">TROOP INFO FILE (OPTIONAL — for platoon/rank data)</div>
+        <div class="troop-row">
+          <div class="tz" id="tz-troop">
+            <input type="file" id="f-troop" accept=".xlsx,.xls" onchange="fileSelected('troop')">
+            <span class="tl">📋 Drop Troop Info Here</span>
+            <span class="tf" id="fn-troop">No file selected</span>
+          </div>
+          <div style="display:flex;align-items:center;padding:.5rem;">
+            <span style="font-family:var(--mono);font-size:.65rem;color:var(--fg-dim);line-height:1.6;">
+              Without troop info, platoon and rank columns will be blank. License changes will still be tracked.
+            </span>
+          </div>
+        </div>
+      </div>
+      <div id="err-upload" class="err hidden"></div>
+      <div class="spin-wrap" id="spin-cmp"><div class="spinner"></div><span>COMPARING REPORTS...</span></div>
+      <button class="btn btn-primary" id="btn-compare" onclick="compareReports()" disabled style="margin-top:1rem">🔄 COMPARE REPORTS</button>
+    </div>
+  </div>
+
+  <div class="panel hidden" id="panel-results">
+    <div class="ph"><h2>Diff Results</h2><span class="tag" id="results-tag">0 CHANGES</span></div>
+    <div class="pb">
+      <div class="badges">
+        <div class="badge added">  <div class="num" id="c-add">0</div><div class="lbl">SOLDIERS ADDED</div></div>
+        <div class="badge removed"><div class="num" id="c-rem">0</div><div class="lbl">SOLDIERS REMOVED</div></div>
+        <div class="badge gained"> <div class="num" id="c-gn">0</div> <div class="lbl">LICENSES GAINED</div></div>
+        <div class="badge lost">   <div class="num" id="c-ls">0</div>  <div class="lbl">LICENSES LOST</div></div>
+        <div class="badge expired"><div class="num" id="c-ex">0</div>  <div class="lbl">NEW EXPIRATIONS</div></div>
+      </div>
+      <div id="no-changes" class="no-changes hidden">✓ NO CHANGES DETECTED BETWEEN THE TWO REPORTS</div>
+      <div id="diff-content"></div>
+      <div id="dl-panel" class="hidden" style="margin-top:1rem;">
+        <div class="success">✓ DIFF REPORT GENERATED</div>
+        <div class="dl-row">
+          <button class="btn-dl" onclick="dlExcel()">📊 DOWNLOAD EXCEL</button>
+          <button class="btn-dl" onclick="dlPDF()">📄 DOWNLOAD PDF</button>
+        </div>
+      </div>
+      <div id="err-gen" class="err hidden"></div>
+      <div class="spin-wrap" id="spin-gen"><div class="spinner"></div><span>GENERATING REPORT...</span></div>
+      <button class="btn btn-primary" id="btn-gen" onclick="generateDiff()" style="margin-top:.75rem;display:none">⚡ GENERATE DIFF REPORT (PDF + EXCEL)</button>
+    </div>
+  </div>
+
+</main>
+<script src="js/core.js"></script>
+<script>
+startClock('clock');
+let oldWB=null, newWB=null, troopWB=null;
+let diffData=null;
+let lastExcel=null, lastPDF=null;
+
+function fileSelected(t) {
+  const input = document.getElementById(`f-${t}`);
+  if (!input.files.length) return;
+  const file = input.files[0];
+  workbookFromFile(file).then(wb => {
+    if (t==='old')   { oldWB=wb;   document.getElementById('uz-old').classList.add('has');   document.getElementById('fn-old').textContent=file.name; }
+    if (t==='new')   { newWB=wb;   document.getElementById('uz-new').classList.add('has');   document.getElementById('fn-new').textContent=file.name; }
+    if (t==='troop') { troopWB=wb; document.getElementById('tz-troop').classList.add('has'); document.getElementById('fn-troop').textContent=file.name; }
+    document.getElementById('btn-compare').disabled = !(oldWB && newWB);
+  });
+}
+
+function compareReports() {
+  const spin = document.getElementById('spin-cmp');
+  spin.style.display='flex';
+  document.getElementById('btn-compare').disabled=true;
+  document.getElementById('err-upload').classList.add('hidden');
+  document.getElementById('panel-results').classList.add('hidden');
+  setTimeout(() => {
+    try {
+      const troopMap = troopWB ? parseTroopInfo(troopWB) : {};
+      const oldRows  = parseGCSS(oldWB);
+      const newRows  = parseGCSS(newWB);
+      const oldRes   = buildSoldiers(oldRows, troopMap);
+      const newRes   = buildSoldiers(newRows, troopMap);
+      diffData = computeDiff(oldRes.soldiers, newRes.soldiers);
+      renderDiff(diffData);
+      document.getElementById('panel-results').classList.remove('hidden');
+    } catch(e) {
+      document.getElementById('err-upload').textContent='⚠ '+e.message;
+      document.getElementById('err-upload').classList.remove('hidden');
+    }
+    spin.style.display='none';
+    document.getElementById('btn-compare').disabled=false;
+  }, 50);
+}
+
+function renderDiff(d) {
+  document.getElementById('c-add').textContent = d.added.length;
+  document.getElementById('c-rem').textContent = d.removed.length;
+  document.getElementById('c-gn').textContent  = d.licensesGained;
+  document.getElementById('c-ls').textContent  = d.licensesLost;
+  document.getElementById('c-ex').textContent  = d.newExpirations;
+  const total = d.added.length + d.removed.length + d.changed.length;
+  document.getElementById('results-tag').textContent = total + ' CHANGE' + (total!==1?'S':'');
+
+  const content = document.getElementById('diff-content');
+  content.innerHTML='';
+  if (!total) {
+    document.getElementById('no-changes').classList.remove('hidden');
+    document.getElementById('btn-gen').style.display='none';
+    return;
+  }
+  document.getElementById('no-changes').classList.add('hidden');
+  document.getElementById('btn-gen').style.display='flex';
+
+  if (d.added.length) {
+    content.innerHTML += `<div class="ds">
+      <div class="ds-title added">+ ${d.added.length} SOLDIER${d.added.length>1?'S':''} ADDED</div>
+      <table class="dt"><thead><tr><th>NAME</th><th>RANK</th><th>PLATOON</th><th>VEHICLES LICENSED</th></tr></thead>
+      <tbody>${d.added.map(s=>`<tr><td>${s.name}</td><td>${s.rank||'—'}</td><td>${s.platoon||'—'}</td>
+        <td>${(s.vehicles||[]).map(v=>`<span class="pill new">${v}</span>`).join('')||'—'}</td></tr>`).join('')}
+      </tbody></table></div>`;
+  }
+  if (d.removed.length) {
+    content.innerHTML += `<div class="ds">
+      <div class="ds-title removed">− ${d.removed.length} SOLDIER${d.removed.length>1?'S':''} REMOVED</div>
+      <table class="dt"><thead><tr><th>NAME</th><th>RANK</th><th>PLATOON</th><th>VEHICLES (LAST SEEN)</th></tr></thead>
+      <tbody>${d.removed.map(s=>`<tr><td>${s.name}</td><td>${s.rank||'—'}</td><td>${s.platoon||'—'}</td>
+        <td>${(s.vehicles||[]).map(v=>`<span class="pill lost">${v}</span>`).join('')||'—'}</td></tr>`).join('')}
+      </tbody></table></div>`;
+  }
+  if (d.changed.length) {
+    content.innerHTML += `<div class="ds">
+      <div class="ds-title changed">↕ ${d.changed.length} SOLDIER${d.changed.length>1?'S':''} WITH LICENSE CHANGES</div>
+      <table class="dt"><thead><tr><th>NAME</th><th>RANK</th><th>PLATOON</th><th>GAINED</th><th>LOST</th><th>NEW EXPIRATIONS</th></tr></thead>
+      <tbody>${d.changed.map(s=>`<tr><td>${s.name}</td><td>${s.rank||'—'}</td><td>${s.platoon||'—'}</td>
+        <td>${(s.gained||[]).map(v=>`<span class="pill new">${v}</span>`).join('')||'—'}</td>
+        <td>${(s.lost||[]).map(v=>`<span class="pill lost">${v}</span>`).join('')||'—'}</td>
+        <td>${(s.newExpired||[]).map(v=>`<span class="pill exp">${v}</span>`).join('')||'—'}</td></tr>`).join('')}
+      </tbody></table></div>`;
+  }
+}
+
+function generateDiff() {
+  const spin=document.getElementById('spin-gen');
+  spin.style.display='flex';
+  document.getElementById('btn-gen').disabled=true;
+  document.getElementById('dl-panel').classList.add('hidden');
+  document.getElementById('err-gen').classList.add('hidden');
+  const oldName = document.getElementById('fn-old').textContent.replace(/\.xlsx?$/i,'');
+  const newName = document.getElementById('fn-new').textContent.replace(/\.xlsx?$/i,'');
+  setTimeout(() => {
+    try {
+      const dateStr = reportDateStr();
+      lastExcel = buildDiffExcel(diffData, dateStr, oldName, newName);
+      lastPDF   = buildDiffPDF(diffData, dateStr, oldName, newName);
+      document.getElementById('dl-panel').classList.remove('hidden');
+    } catch(e) {
+      document.getElementById('err-gen').textContent='⚠ '+e.message;
+      document.getElementById('err-gen').classList.remove('hidden');
+    }
+    spin.style.display='none';
+    document.getElementById('btn-gen').disabled=false;
+  }, 50);
+}
+
+function dlExcel() { triggerDownload(lastExcel, `RosterDiff_${dateStamp()}.xlsx`); }
+function dlPDF()   { triggerDownload(lastPDF,   `RosterDiff_${dateStamp()}.pdf`); }
+
+function buildDiffExcel(d, dateStr, oldLbl, newLbl) {
+  const wb = XLSX.utils.book_new();
+
+  // Summary
+  const sumAoa = [
+    [`ROSTER DIFF REPORT — ${dateStr}`, ''],
+    [`OLD: ${oldLbl}  →  NEW: ${newLbl}`, ''],
+    ['',''],
+    ['SOLDIERS ADDED',   d.added.length],
+    ['SOLDIERS REMOVED', d.removed.length],
+    ['SOLDIERS CHANGED', d.changed.length],
+    ['LICENSES GAINED',  d.licensesGained],
+    ['LICENSES LOST',    d.licensesLost],
+    ['NEW EXPIRATIONS',  d.newExpirations],
+  ];
+  const sumWs = XLSX.utils.aoa_to_sheet(sumAoa);
+  sumWs['!cols']=[{wch:25},{wch:12}];
+  XLSX.utils.book_append_sheet(wb, sumWs, 'SUMMARY');
+
+  // Added
+  const addAoa = [['NAME','RANK','PLATOON','VEHICLES LICENSED'],
+                  ...d.added.map(s=>[s.name,s.rank||'',s.platoon||'',s.vehicles.join(' | ')])];
+  const addWs = XLSX.utils.aoa_to_sheet(addAoa);
+  addWs['!cols']=[{wch:28},{wch:10},{wch:12},{wch:40}];
+  XLSX.utils.book_append_sheet(wb, addWs, 'ADDED');
+
+  // Removed
+  const remAoa = [['NAME','RANK','PLATOON','VEHICLES (LAST SEEN)'],
+                  ...d.removed.map(s=>[s.name,s.rank||'',s.platoon||'',s.vehicles.join(' | ')])];
+  const remWs = XLSX.utils.aoa_to_sheet(remAoa);
+  remWs['!cols']=[{wch:28},{wch:10},{wch:12},{wch:40}];
+  XLSX.utils.book_append_sheet(wb, remWs, 'REMOVED');
+
+  // Changed
+  const chgAoa = [['NAME','RANK','PLATOON','GAINED','LOST','NEW EXPIRATIONS'],
+                  ...d.changed.map(s=>[s.name,s.rank||'',s.platoon||'',
+                    s.gained.join(' | ')||'—',s.lost.join(' | ')||'—',s.newExpired.join(' | ')||'—'])];
+  const chgWs = XLSX.utils.aoa_to_sheet(chgAoa);
+  chgWs['!cols']=[{wch:28},{wch:10},{wch:12},{wch:25},{wch:25},{wch:25}];
+  XLSX.utils.book_append_sheet(wb, chgWs, 'LICENSE CHANGES');
+
+  const out = XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  return new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+
+function buildDiffPDF(d, dateStr, oldLbl, newLbl) {
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'landscape',unit:'pt',format:'letter'});
+  const W = doc.internal.pageSize.getWidth();
+  const GREEN=[75,83,32], DARK=[43,58,26], ADD_H=[46,125,50], REM_H=[198,40,40], CHG_H=[93,64,55];
+  let y=40;
+
+  doc.setFillColor(...DARK); doc.rect(40,y,W-80,46,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(13); doc.setFont('helvetica','bold');
+  doc.text('ROSTER DIFF REPORT', W/2, y+16, {align:'center'});
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text(dateStr, W/2, y+28, {align:'center'});
+  doc.text(`${oldLbl}  →  ${newLbl}`, W/2, y+40, {align:'center'});
+  y+=60;
+
+  const stats=[['SOLDIERS ADDED',d.added.length],['SOLDIERS REMOVED',d.removed.length],
+               ['SOLDIERS CHANGED',d.changed.length],['LICENSES GAINED',d.licensesGained],
+               ['LICENSES LOST',d.licensesLost],['NEW EXPIRATIONS',d.newExpirations]];
+  const sw=(W-80)/6;
+  stats.forEach(([lbl,val],i)=>{
+    const x=40+i*sw;
+    doc.setFillColor(...GREEN); doc.rect(x,y,sw-2,16,'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(6); doc.setFont('helvetica','bold');
+    doc.text(lbl,x+sw/2-1,y+11,{align:'center'});
+    doc.setFillColor(245,245,245); doc.rect(x,y+16,sw-2,24,'F');
+    doc.setTextColor(0,0,0); doc.setFontSize(14); doc.setFont('helvetica','bold');
+    doc.text(String(val),x+sw/2-1,y+34,{align:'center'});
+  });
+  y+=50;
+
+  if (d.added.length) {
+    doc.setTextColor(...ADD_H); doc.setFontSize(10); doc.setFont('helvetica','bold');
+    doc.text(`+ SOLDIERS ADDED (${d.added.length})`, 40, y); y+=8;
+    doc.autoTable({
+      startY:y, margin:{left:40,right:40},
+      head:[['NAME','RANK','PLATOON','VEHICLES LICENSED']],
+      body:d.added.map(s=>[s.name,s.rank||'—',s.platoon||'—',s.vehicles.join(' | ')||'—']),
+      headStyles:{fillColor:ADD_H,textColor:255,fontSize:7},
+      bodyStyles:{fontSize:7}, alternateRowStyles:{fillColor:[212,237,218]},
+    });
+    y=doc.lastAutoTable.finalY+12;
+  }
+
+  if (d.removed.length) {
+    if (y > doc.internal.pageSize.getHeight()-80) { doc.addPage(); y=40; }
+    doc.setTextColor(...REM_H); doc.setFontSize(10); doc.setFont('helvetica','bold');
+    doc.text(`− SOLDIERS REMOVED (${d.removed.length})`, 40, y); y+=8;
+    doc.autoTable({
+      startY:y, margin:{left:40,right:40},
+      head:[['NAME','RANK','PLATOON','VEHICLES (LAST SEEN)']],
+      body:d.removed.map(s=>[s.name,s.rank||'—',s.platoon||'—',s.vehicles.join(' | ')||'—']),
+      headStyles:{fillColor:REM_H,textColor:255,fontSize:7},
+      bodyStyles:{fontSize:7}, alternateRowStyles:{fillColor:[248,215,218]},
+    });
+    y=doc.lastAutoTable.finalY+12;
+  }
+
+  if (d.changed.length) {
+    if (y > doc.internal.pageSize.getHeight()-80) { doc.addPage(); y=40; }
+    doc.setTextColor(...CHG_H); doc.setFontSize(10); doc.setFont('helvetica','bold');
+    doc.text(`↕ LICENSE CHANGES (${d.changed.length} soldiers)`, 40, y); y+=8;
+    doc.autoTable({
+      startY:y, margin:{left:40,right:40},
+      head:[['NAME','RANK','PLATOON','GAINED','LOST','NEW EXPIRATIONS']],
+      body:d.changed.map(s=>[s.name,s.rank||'—',s.platoon||'—',
+        s.gained.join(' | ')||'—',s.lost.join(' | ')||'—',s.newExpired.join(' | ')||'—']),
+      headStyles:{fillColor:CHG_H,textColor:255,fontSize:7},
+      bodyStyles:{fontSize:7}, alternateRowStyles:{fillColor:[255,243,205]},
+    });
+  }
+
+  return new Blob([doc.output('arraybuffer')],{type:'application/pdf'});
+}
+</script>
+</body>
+</html>

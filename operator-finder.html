@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<title>Operator Finder // UNIT TOOLS</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+  :root{
+    --green:#4B5320;--green-lt:#6B7A32;--tan:#C8B560;--tan-lt:#DDD090;
+    --dark:#1A1F0E;--darker:#0F1208;--fg:#E8E4D0;--fg-dim:#9A9680;
+    --red:#CC2200;--ok:#5A8A30;
+    --panel:#222810;--border:#3A4018;
+    --mono:'Share Tech Mono',monospace;--cond:'Barlow Condensed',sans-serif;--body:'Barlow',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--darker);color:var(--fg);font-family:var(--body);min-height:100vh;
+    background-image:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(74,83,32,.03) 2px,rgba(74,83,32,.03) 4px);}
+  header{background:var(--green);border-bottom:3px solid var(--tan);padding:0 2rem;
+    display:flex;align-items:center;gap:1.25rem;height:96px;position:sticky;top:0;z-index:100;}
+  .he img{height:68px;width:68px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4));}
+  .ht h1{font-family:var(--cond);font-size:1.95rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#fff;line-height:1;}
+  .ht p{font-family:var(--mono);font-size:.85rem;color:var(--tan-lt);letter-spacing:.08em;margin-top:4px;}
+  .ht .made{font-size:.55rem;color:var(--tan-lt);letter-spacing:.06em;margin-top:2px;opacity:.7;}
+  .hb{margin-left:auto;font-family:var(--mono);font-size:.85rem;color:var(--tan);text-align:right;line-height:1.6;white-space:pre;}
+  .back-bar{background:var(--dark);border-bottom:1px solid var(--border);padding:.5rem 1.5rem;display:flex;align-items:center;gap:.75rem;}
+  .back-btn{font-family:var(--mono);font-size:.75rem;color:var(--tan);text-decoration:none;}
+  .back-btn:hover{color:var(--tan-lt);}
+  .back-sep,.back-cur{font-family:var(--mono);font-size:.75rem;color:var(--fg-dim);}
+  main{max-width:900px;margin:0 auto;padding:2rem 1rem;}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:4px;margin-bottom:1.25rem;overflow:hidden;}
+  .ph{background:var(--green);padding:.7rem 1rem;display:flex;align-items:center;gap:.75rem;}
+  .ph h2{font-family:var(--cond);font-size:1rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#fff;}
+  .ph .tag{margin-left:auto;font-family:var(--mono);font-size:.6rem;color:var(--tan);background:rgba(0,0,0,.3);padding:2px 8px;border-radius:2px;}
+  .pb{padding:1.25rem;}
+  .upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+  @media(max-width:600px){.upload-grid{grid-template-columns:1fr;}}
+  .uz{border:2px dashed var(--border);border-radius:4px;padding:1.5rem 1rem;text-align:center;
+    cursor:pointer;transition:all .2s;position:relative;background:rgba(0,0,0,.2);}
+  .uz:hover{border-color:var(--tan);}
+  .uz.has{border-color:var(--ok);border-style:solid;background:rgba(90,138,48,.08);}
+  .uz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+  .uz .icon{font-size:2rem;margin-bottom:.5rem;display:block;}
+  .uz .lbl{font-family:var(--cond);font-size:.85rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--fg);display:block;margin-bottom:.25rem;}
+  .uz .hint{font-family:var(--mono);font-size:.65rem;color:var(--fg-dim);}
+  .uz .fname{display:none;font-family:var(--mono);font-size:.7rem;color:var(--ok);margin-top:.5rem;word-break:break-all;}
+  .uz.has .fname{display:block;}
+  .uz.has .hint{display:none;}
+  .saved-bar{background:rgba(200,181,96,.07);border:1px solid rgba(200,181,96,.2);border-radius:4px;
+    padding:.6rem .9rem;display:none;align-items:center;gap:.75rem;margin-top:.75rem;flex-wrap:wrap;}
+  .saved-bar.show{display:flex;}
+  .saved-info{font-family:var(--mono);font-size:.65rem;color:var(--tan);flex:1;}
+  .saved-info strong{color:var(--fg);}
+  .sbtn{font-family:var(--cond);font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.35rem .75rem;border:none;border-radius:2px;cursor:pointer;}
+  .sbtn-use{background:var(--ok);color:#fff;}
+  .sbtn-del{background:transparent;color:var(--red);border:1px solid rgba(204,34,0,.3);}
+  .sbtn-del:hover{background:rgba(204,34,0,.1);}
+  .filter-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+  @media(max-width:650px){.filter-grid{grid-template-columns:1fr;}}
+  .filter-box{background:var(--dark);border:1px solid var(--border);border-radius:4px;padding:.75rem;}
+  .filter-box label{font-family:var(--cond);font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-dim);display:block;margin-bottom:.5rem;}
+  .filter-sel{width:100%;background:var(--darker);border:1px solid var(--border);border-radius:3px;
+    color:var(--fg);font-family:var(--mono);font-size:.8rem;padding:.4rem .6rem;outline:none;appearance:none;}
+  .filter-sel:focus{border-color:var(--tan);}
+  .tbl-wrap{max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:3px;}
+  .tbl{width:100%;border-collapse:collapse;font-size:.78rem;}
+  .tbl th{font-family:var(--cond);font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    padding:.4rem .75rem;text-align:left;background:var(--green);color:#fff;position:sticky;top:0;}
+  .tbl td{padding:.35rem .75rem;font-family:var(--mono);font-size:.72rem;border-top:1px solid var(--border);color:var(--fg);}
+  .tbl tr:nth-child(even) td{background:rgba(0,0,0,.15);}
+  .pill{display:inline-block;font-family:var(--mono);font-size:.6rem;padding:1px 6px;border-radius:10px;margin:1px;
+    background:rgba(75,83,32,.3);border:1px solid var(--border);color:var(--tan);}
+  .pill.exp{background:rgba(204,34,0,.15);border-color:#CC2200;color:#FF6655;}
+  .pill.warn{background:rgba(255,102,0,.15);border-color:#FF6600;color:#FF8833;}
+  .btn{font-family:var(--cond);font-size:1rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+    padding:.75rem 2rem;border:none;border-radius:3px;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:.5rem;}
+  .btn-primary{background:var(--ok);color:#fff;border:2px solid #6AAA38;width:100%;justify-content:center;font-size:1.1rem;margin-top:.5rem;}
+  .btn-primary:hover:not(:disabled){background:#6AAA38;}
+  .btn-primary:disabled{opacity:.4;cursor:not-allowed;}
+  .btn-search{background:var(--green);color:#fff;border:2px solid var(--green-lt);width:100%;justify-content:center;margin-top:.5rem;}
+  .btn-search:hover:not(:disabled){background:var(--green-lt);}
+  .btn-search:disabled{opacity:.4;cursor:not-allowed;}
+  .btn-clr{background:var(--dark);color:var(--fg-dim);border:1px solid var(--border);font-size:.8rem;padding:.4rem 1rem;}
+  .btn-clr:hover{border-color:var(--red);color:var(--red);}
+  .btn-dl{background:var(--dark);color:var(--tan);border:2px solid var(--tan);text-decoration:none;
+    display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
+    padding:.6rem 1.5rem;font-family:var(--cond);font-size:.95rem;font-weight:700;
+    letter-spacing:.15em;text-transform:uppercase;border-radius:3px;margin:.25rem;}
+  .btn-dl:hover{background:var(--tan);color:var(--dark);}
+  .err{background:rgba(204,34,0,.1);border:1px solid #CC2200;border-radius:4px;
+    padding:.75rem 1rem;font-family:var(--mono);font-size:.8rem;color:#FF6655;margin:.75rem 0;}
+  .hidden{display:none!important;}
+  .spin-wrap{display:none;align-items:center;gap:.75rem;padding:.75rem;font-family:var(--mono);font-size:.75rem;color:var(--tan);}
+  .spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--tan);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .success{background:rgba(90,138,48,.15);border:1px solid var(--ok);border-radius:4px;
+    padding:.75rem 1rem;font-family:var(--cond);font-size:.9rem;font-weight:700;color:#88CC44;text-align:center;margin-bottom:1rem;}
+  .dl-row{display:flex;flex-wrap:wrap;justify-content:center;}
+</style>
+</head>
+<body>
+<header>
+  <div class="he"><img src="assets/icon.png" alt="Unit Tools"></div>
+  <div class="ht">
+    <h1>UNIT TOOLS</h1>
+    <p>2225 EN CO // ADMINISTRATIVE TOOLKIT</p>
+    <p class="made">MADE BY: SGT SONNIER, JOHN (WIP)</p>
+  </div>
+  <div class="hb" id="clock"></div>
+</header>
+<div class="back-bar">
+  <a class="back-btn" href="index.html">← BACK</a>
+  <span class="back-sep">//</span>
+  <span class="back-cur">OPERATOR FINDER</span>
+</div>
+<main>
+
+  <!-- Upload -->
+  <div class="panel">
+    <div class="ph"><h2>Step 1 — Upload Files</h2><span class="tag">REQUIRED</span></div>
+    <div class="pb">
+      <div class="upload-grid">
+        <div class="uz" id="uz-gcss">
+          <input type="file" id="f-gcss" accept=".xlsx,.xls" onchange="fileSelected('gcss')">
+          <span class="icon">📥</span><span class="lbl">GCSS Export</span>
+          <span class="hint">Raw export from GCSS Army</span>
+          <span class="fname" id="fn-gcss"></span>
+        </div>
+        <div class="uz" id="uz-troop">
+          <input type="file" id="f-troop" accept=".xlsx,.xls" onchange="fileSelected('troop')">
+          <span class="icon">📋</span><span class="lbl">Troop Info File</span>
+          <span class="hint">Your maintained platoon roster</span>
+          <span class="fname" id="fn-troop"></span>
+        </div>
+      </div>
+      <div class="saved-bar" id="saved-gcss-bar">
+        <div class="saved-info" id="saved-gcss-info"></div>
+        <button class="sbtn sbtn-use" onclick="useSaved('gcss')">⚡ USE SAVED</button>
+        <button class="sbtn sbtn-del" onclick="delSaved('gcss')">✕</button>
+      </div>
+      <div class="saved-bar" id="saved-troop-bar">
+        <div class="saved-info" id="saved-troop-info"></div>
+        <button class="sbtn sbtn-use" onclick="useSaved('troop')">⚡ USE SAVED</button>
+        <button class="sbtn sbtn-del" onclick="delSaved('troop')">✕</button>
+      </div>
+      <div id="err-upload" class="err hidden"></div>
+      <div class="spin-wrap" id="spin-load"><div class="spinner"></div><span>LOADING DATA...</span></div>
+      <button class="btn btn-search" id="btn-load" onclick="loadData()" disabled style="margin-top:1rem">🔍 LOAD DATA</button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="panel hidden" id="panel-filters">
+    <div class="ph"><h2>Step 2 — Set Filters</h2><span class="tag" id="filter-tag">0 MATCHES</span></div>
+    <div class="pb">
+      <div class="filter-grid">
+        <div class="filter-box">
+          <label>Platoon</label>
+          <select class="filter-sel" id="f-plt" onchange="applyFilters()">
+            <option value="">— ALL PLATOONS —</option>
+            <option>HQ</option><option>1ST</option><option>2ND</option><option>SUPPORT</option>
+          </select>
+        </div>
+        <div class="filter-box">
+          <label>Rank</label>
+          <select class="filter-sel" id="f-rank" onchange="applyFilters()">
+            <option value="">— ALL RANKS —</option>
+          </select>
+        </div>
+        <div class="filter-box">
+          <label>Vehicle Type</label>
+          <select class="filter-sel" id="f-veh" onchange="applyFilters()">
+            <option value="">— ALL VEHICLES —</option>
+          </select>
+        </div>
+      </div>
+      <div style="text-align:right;margin-top:.75rem">
+        <button class="btn btn-clr" onclick="clearFilters()">✕ CLEAR FILTERS</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="panel hidden" id="panel-results">
+    <div class="ph"><h2>Step 3 — Results</h2><span class="tag" id="results-tag">0 SOLDIERS</span></div>
+    <div class="pb">
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th>#</th><th>RANK</th><th>NAME</th><th>PLATOON</th><th>VEHICLES</th><th>FLAGS</th></tr></thead>
+          <tbody id="results-body"></tbody>
+        </table>
+      </div>
+      <div id="err-gen" class="err hidden" style="margin-top:1rem"></div>
+      <div class="spin-wrap" id="spin-gen"><div class="spinner"></div><span>GENERATING...</span></div>
+      <div id="dl-panel" class="hidden" style="margin-top:.75rem">
+        <div class="success">✓ REPORT GENERATED</div>
+        <div class="dl-row">
+          <button class="btn-dl" onclick="dlExcel()">📊 EXCEL</button>
+          <button class="btn-dl" onclick="dlPDF()">📄 PDF</button>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btn-gen" onclick="generateReport()">⚡ GENERATE FILTERED REPORT</button>
+    </div>
+  </div>
+
+</main>
+<script src="js/core.js"></script>
+<script>
+startClock('clock');
+let gcssWB=null, troopWB=null, allSoldiers={}, filteredSoldiers={};
+let lastExcel=null, lastPDF=null;
+
+function refreshSavedBars() {
+  for (const t of ['gcss','troop']) {
+    const info = getSavedFileInfo(t);
+    const bar  = document.getElementById(`saved-${t}-bar`);
+    const inf  = document.getElementById(`saved-${t}-info`);
+    if (info) { bar.classList.add('show'); inf.innerHTML=`SAVED: <strong>${info.name}</strong> &nbsp;|&nbsp; ${info.date}`; }
+    else bar.classList.remove('show');
+  }
+}
+refreshSavedBars();
+
+function useSaved(t) {
+  const info = getSavedFileInfo(t);
+  if (!info) return;
+  const wb = workbookFromDataURL(info.data);
+  if (t==='gcss') { gcssWB=wb; } else { troopWB=wb; }
+  document.getElementById(`uz-${t}`).classList.add('has');
+  document.getElementById(`fn-${t}`).textContent = info.name;
+  checkReady();
+}
+function delSaved(t) { deleteSavedFile(t); refreshSavedBars(); }
+
+function fileSelected(t) {
+  const input = document.getElementById(`f-${t}`);
+  if (!input.files.length) return;
+  const file = input.files[0];
+  workbookFromFile(file).then(wb => {
+    if (t==='gcss') gcssWB=wb; else troopWB=wb;
+    document.getElementById(`uz-${t}`).classList.add('has');
+    document.getElementById(`fn-${t}`).textContent = file.name;
+    saveFile(t, file).then(refreshSavedBars);
+    checkReady();
+  });
+}
+function checkReady() { document.getElementById('btn-load').disabled = !(gcssWB&&troopWB); }
+
+function loadData() {
+  const spin = document.getElementById('spin-load');
+  spin.style.display='flex';
+  document.getElementById('btn-load').disabled=true;
+  document.getElementById('err-upload').classList.add('hidden');
+  setTimeout(() => {
+    try {
+      const gcssRows = parseGCSS(gcssWB);
+      const troopMap = parseTroopInfo(troopWB);
+      const res = buildSoldiers(gcssRows, troopMap);
+      allSoldiers = res.soldiers;
+      populateFilters();
+      applyFilters();
+      document.getElementById('panel-filters').classList.remove('hidden');
+      document.getElementById('panel-results').classList.remove('hidden');
+    } catch(e) {
+      document.getElementById('err-upload').textContent='⚠ '+e.message;
+      document.getElementById('err-upload').classList.remove('hidden');
+    }
+    spin.style.display='none';
+    document.getElementById('btn-load').disabled=false;
+  }, 50);
+}
+
+function populateFilters() {
+  const ranks = [...new Set(Object.values(allSoldiers).map(s=>s.rank).filter(Boolean))].sort();
+  const rSel = document.getElementById('f-rank');
+  rSel.innerHTML = '<option value="">— ALL RANKS —</option>';
+  ranks.forEach(r => rSel.innerHTML += `<option>${r}</option>`);
+
+  const vehs = [...new Set(Object.values(allSoldiers).flatMap(s=>s.vehicles))].sort();
+  const vSel = document.getElementById('f-veh');
+  vSel.innerHTML = '<option value="">— ALL VEHICLES —</option>';
+  vehs.forEach(v => vSel.innerHTML += `<option>${v}</option>`);
+}
+
+function applyFilters() {
+  const plt  = document.getElementById('f-plt').value;
+  const rank = document.getElementById('f-rank').value;
+  const veh  = document.getElementById('f-veh').value;
+  filteredSoldiers = {};
+  for (const [n,s] of Object.entries(allSoldiers)) {
+    if (plt  && s.platoon !== plt)          continue;
+    if (rank && s.rank    !== rank)         continue;
+    if (veh  && !s.vehicles.includes(veh)) continue;
+    filteredSoldiers[n] = s;
+  }
+  const cnt = Object.keys(filteredSoldiers).length;
+  document.getElementById('filter-tag').textContent   = cnt+' MATCHES';
+  document.getElementById('results-tag').textContent  = cnt+' SOLDIERS';
+  document.getElementById('btn-gen').disabled = cnt===0;
+  document.getElementById('dl-panel').classList.add('hidden');
+  renderResults();
+}
+
+function clearFilters() {
+  document.getElementById('f-plt').value='';
+  document.getElementById('f-rank').value='';
+  document.getElementById('f-veh').value='';
+  applyFilters();
+}
+
+function renderResults() {
+  const tbody = document.getElementById('results-body');
+  const list  = sortSoldiers(filteredSoldiers);
+  if (!list.length) {
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--fg-dim);padding:1.5rem;font-family:var(--mono);">No matches.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map((s,i) => {
+    const flags = (s.flags||[]).map(f => {
+      const cls = f.includes('EXPIRED')?'exp':f.includes('EXPIR')?'warn':'';
+      return `<span class="pill ${cls}">${f}</span>`;
+    }).join('');
+    const vehs = (s.vehicles||[]).map(v=>`<span class="pill">${v}</span>`).join('');
+    return `<tr><td style="color:var(--fg-dim)">${i+1}</td><td>${s.rank}</td><td>${s.name}</td>
+      <td>${s.platoon}</td><td>${vehs||'—'}</td><td>${flags||'—'}</td></tr>`;
+  }).join('');
+}
+
+function generateReport() {
+  const spin = document.getElementById('spin-gen');
+  spin.style.display='flex';
+  document.getElementById('btn-gen').disabled=true;
+  document.getElementById('dl-panel').classList.add('hidden');
+  document.getElementById('err-gen').classList.add('hidden');
+  setTimeout(() => {
+    try {
+      const plt  = document.getElementById('f-plt').value;
+      const rank = document.getElementById('f-rank').value;
+      const veh  = document.getElementById('f-veh').value;
+      const parts = [plt,rank,veh].filter(Boolean);
+      const label = parts.length ? parts.join('_') : 'ALL';
+      const dateStr = reportDateStr();
+      lastExcel = buildExcelBlob(filteredSoldiers, label, dateStr);
+      lastPDF   = buildPDFBlob(filteredSoldiers, label, dateStr, veh);
+      document.getElementById('dl-panel').classList.remove('hidden');
+    } catch(e) {
+      document.getElementById('err-gen').textContent='⚠ '+e.message;
+      document.getElementById('err-gen').classList.remove('hidden');
+    }
+    spin.style.display='none';
+    document.getElementById('btn-gen').disabled = Object.keys(filteredSoldiers).length===0;
+  }, 50);
+}
+
+function dlExcel() { const lbl=getLabel(); triggerDownload(lastExcel,`OperatorFinder_${lbl}_${dateStamp()}.xlsx`); }
+function dlPDF()   { const lbl=getLabel(); triggerDownload(lastPDF,  `OperatorFinder_${lbl}_${dateStamp()}.pdf`);  }
+function getLabel() {
+  return [document.getElementById('f-plt').value,document.getElementById('f-rank').value,
+          document.getElementById('f-veh').value].filter(Boolean).join('_') || 'ALL';
+}
+
+function buildExcelBlob(soldiers, label, dateStr) {
+  const wb   = XLSX.utils.book_new();
+  const list = sortSoldiers(soldiers);
+  const aoa  = [[`OPERATOR FINDER: ${label} — ${dateStr}`,'','','','','','',''],
+                ['PLATOON','RANK','LAST','FIRST','VEHICLES LICENSED','# VEH','FLAGS','STATUS']];
+  for (const s of list) {
+    const anyExp=s.flags.some(f=>f.includes('EXPIRED'));
+    const anyWarn=s.flags.some(f=>f.includes('EXPIRES'));
+    const anyRest=s.flags.some(f=>f.includes('LEARNER')||f.includes('LIMITED'));
+    const status=anyExp?'EXPIRED':anyWarn?'EXPIRING':anyRest?'RESTRICTED':s.vehicles.length?'CURRENT':'NO LICENSE';
+    aoa.push([s.platoon,s.rank,s.last,s.first,s.vehicles.join(' | '),s.vehicles.length,s.flags.join(' | '),status]);
+  }
+  aoa.push([`TOTAL: ${list.length}  |  FILTER: ${label}  |  Generated: ${dateStr}`,'','','','','','','']);
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:7}},{s:{r:aoa.length-1,c:0},e:{r:aoa.length-1,c:7}}];
+  ws['!cols']=[{wch:11},{wch:8},{wch:18},{wch:16},{wch:54},{wch:7},{wch:30},{wch:13}];
+  XLSX.utils.book_append_sheet(wb, ws, 'FILTERED ROSTER');
+  const out = XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  return new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+
+function buildPDFBlob(soldiers, label, dateStr, vehFilter) {
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'landscape',unit:'pt',format:'letter'});
+  const W = doc.internal.pageSize.getWidth();
+  const GREEN=[75,83,32], DARK=[43,58,26], RED=[204,0,0], ORANGE=[255,102,0];
+  let y=40;
+
+  doc.setFillColor(...DARK); doc.rect(40,y,W-80,36,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(13); doc.setFont('helvetica','bold');
+  doc.text(`OPERATOR FINDER — FILTER: ${label}`, W/2, y+14, {align:'center'});
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text(dateStr, W/2, y+28, {align:'center'});
+  y+=50;
+
+  const list = sortSoldiers(soldiers);
+  const statVals = [list.length,
+    list.filter(s=>s.flags.some(f=>f.includes('EXPIRED'))).length,
+    list.filter(s=>s.flags.some(f=>f.includes('EXPIRES'))).length];
+  const statLabels=['SOLDIERS MATCHED','EXPIRED','EXPIRING 90D'];
+  const sw=(W-80)/3;
+  statLabels.forEach((lbl,i)=>{
+    const x=40+i*sw;
+    doc.setFillColor(...GREEN); doc.rect(x,y,sw-2,16,'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(7); doc.setFont('helvetica','bold');
+    doc.text(lbl,x+sw/2-1,y+11,{align:'center'});
+    doc.setFillColor(245,245,245); doc.rect(x,y+16,sw-2,24,'F');
+    doc.setTextColor(0,0,0); doc.setFontSize(16); doc.setFont('helvetica','bold');
+    doc.text(String(statVals[i]),x+sw/2-1,y+34,{align:'center'});
+  });
+  y+=52;
+
+  // Alerts for filtered vehicle only
+  const filteredExp = vehFilter
+    ? list.filter(s=>s.flags.some(f=>f.includes('EXPIRED')&&f.startsWith(vehFilter)))
+    : list.filter(s=>s.flags.some(f=>f.includes('EXPIRED')));
+
+  if (filteredExp.length) {
+    doc.setTextColor(...RED); doc.setFontSize(10); doc.setFont('helvetica','bold');
+    doc.text('EXPIRED LICENSES', 40, y); y+=8;
+    doc.autoTable({
+      startY:y, margin:{left:40,right:40},
+      head:[['NAME','RANK','PLATOON','FLAGS']],
+      body:filteredExp.map(s=>[s.name,s.rank,s.platoon,s.flags.filter(f=>f.includes('EXPIRED')).join(' | ')]),
+      headStyles:{fillColor:RED,textColor:255,fontSize:7},
+      bodyStyles:{fontSize:7}, alternateRowStyles:{fillColor:[255,238,238]},
+    });
+    y=doc.lastAutoTable.finalY+12;
+  }
+
+  doc.setTextColor(...GREEN); doc.setFontSize(10); doc.setFont('helvetica','bold');
+  doc.text('FULL ROSTER', 40, y); y+=8;
+  doc.autoTable({
+    startY:y, margin:{left:40,right:40},
+    head:[['RANK','NAME','PLATOON','VEHICLES LICENSED','STATUS']],
+    body: list.map(s=>{
+      const anyExp=s.flags.some(f=>f.includes('EXPIRED'));
+      const anyWarn=s.flags.some(f=>f.includes('EXPIRES'));
+      const anyRest=s.flags.some(f=>f.includes('LEARNER')||f.includes('LIMITED'));
+      return [s.rank,`${s.last}, ${s.first}`,s.platoon,s.vehicles.join(' | '),
+              anyExp?'EXPIRED':anyWarn?'EXPIRING':anyRest?'RESTRICTED':s.vehicles.length?'CURRENT':'NO LIC'];
+    }),
+    headStyles:{fillColor:GREEN,textColor:255,fontSize:7,fontStyle:'bold'},
+    bodyStyles:{fontSize:7}, alternateRowStyles:{fillColor:[242,245,238]},
+    columnStyles:{0:{cellWidth:38},1:{cellWidth:120},2:{cellWidth:60},3:{cellWidth:320},4:{cellWidth:60}},
+  });
+
+  return new Blob([doc.output('arraybuffer')],{type:'application/pdf'});
+}
+</script>
+</body>
+</html>

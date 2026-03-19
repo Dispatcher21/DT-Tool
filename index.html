@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<title>UNIT TOOLS // 2225 EN CO</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green:#4B5320;--green-lt:#6B7A32;--tan:#C8B560;--tan-lt:#DDD090;
+    --dark:#1A1F0E;--darker:#0F1208;--fg:#E8E4D0;--fg-dim:#9A9680;
+    --panel:#222810;--border:#3A4018;
+    --mono:'Share Tech Mono',monospace;--cond:'Barlow Condensed',sans-serif;--body:'Barlow',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--darker);color:var(--fg);font-family:var(--body);min-height:100vh;
+    background-image:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(74,83,32,.03) 2px,rgba(74,83,32,.03) 4px);}
+
+  header{background:var(--green);border-bottom:3px solid var(--tan);padding:0 2rem;
+    display:flex;align-items:center;gap:1.25rem;height:96px;}
+  .he img{height:68px;width:68px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4));}
+  .ht h1{font-family:var(--cond);font-size:2rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#fff;line-height:1;}
+  .ht p{font-family:var(--mono);font-size:.85rem;color:var(--tan-lt);letter-spacing:.08em;margin-top:4px;}
+  .ht .made{font-size:.55rem;color:var(--tan-lt);letter-spacing:.06em;margin-top:2px;opacity:.7;}
+  .hb{margin-left:auto;font-family:var(--mono);font-size:.85rem;color:var(--tan);text-align:right;line-height:1.6;white-space:pre;}
+
+  main{max-width:900px;margin:0 auto;padding:2.5rem 1rem;}
+
+  .eyebrow{font-family:var(--mono);font-size:.7rem;color:var(--fg-dim);letter-spacing:.15em;
+    text-transform:uppercase;margin-bottom:1.5rem;padding-bottom:.5rem;border-bottom:1px solid var(--border);}
+
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.25rem;}
+  @media(max-width:600px){.grid{grid-template-columns:1fr;}}
+
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:1.5rem;
+    text-decoration:none;color:var(--fg);display:block;position:relative;
+    transition:border-color .2s,transform .15s;overflow:hidden;}
+  .card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(75,83,32,.15) 0%,transparent 60%);pointer-events:none;}
+  .card:hover{border-color:var(--tan);transform:translateY(-2px);}
+  .badge{position:absolute;top:.75rem;right:.75rem;font-family:var(--mono);font-size:.55rem;
+    color:var(--ok,#5A8A30);background:rgba(90,138,48,.15);border:1px solid rgba(90,138,48,.3);
+    padding:2px 7px;border-radius:2px;letter-spacing:.1em;}
+  .icon{font-size:2rem;display:block;margin-bottom:.75rem;}
+  .title{font-family:var(--cond);font-size:1.25rem;font-weight:800;letter-spacing:.08em;
+    text-transform:uppercase;margin-bottom:.5rem;}
+  .desc{font-family:var(--body);font-size:.85rem;color:var(--fg-dim);line-height:1.5;}
+
+  footer{text-align:center;padding:2rem 1rem;font-family:var(--mono);font-size:.6rem;
+    color:var(--fg-dim);letter-spacing:.1em;border-top:1px solid var(--border);margin-top:2rem;}
+  .disclaimer{background:rgba(200,181,96,.05);border:1px solid rgba(200,181,96,.15);border-radius:4px;
+    padding:.75rem 1rem;font-family:var(--mono);font-size:.6rem;color:var(--fg-dim);
+    letter-spacing:.06em;margin-top:1.5rem;line-height:1.7;}
+</style>
+</head>
+<body>
+<header>
+  <div class="he"><img src="assets/icon.png" alt="Unit Icon"></div>
+  <div class="ht">
+    <h1>UNIT TOOLS</h1>
+    <p>2225 EN CO // ADMINISTRATIVE TOOLKIT</p>
+    <p class="made">MADE BY: SGT SONNIER, JOHN (WIP)</p>
+  </div>
+  <div class="hb" id="clock"></div>
+</header>
+
+<main>
+  <div class="eyebrow">SELECT A TOOL TO CONTINUE</div>
+
+  <div class="grid">
+    <a class="card" href="gcss.html">
+      <span class="badge">ACTIVE</span>
+      <span class="icon">📋</span>
+      <div class="title">GCSS Report Generator</div>
+      <div class="desc">Process raw GCSS exports into clean platoon rosters, match reports, and PDF/Excel summaries. AR 600-55 compliant.</div>
+    </a>
+    <a class="card" href="paperwork.html">
+      <span class="badge">ACTIVE</span>
+      <span class="icon">📝</span>
+      <div class="title">Paperwork Assistor</div>
+      <div class="desc">Auto-fill DA 6125 road tests and generate written exam answer sheets for any vehicle type.</div>
+    </a>
+    <a class="card" href="operator-finder.html">
+      <span class="badge">ACTIVE</span>
+      <span class="icon">🔍</span>
+      <div class="title">Operator Finder</div>
+      <div class="desc">Filter soldiers by platoon, rank, or vehicle type. Generate a targeted report from your GCSS and Troop Info data.</div>
+    </a>
+    <a class="card" href="roster-diff.html">
+      <span class="badge">ACTIVE</span>
+      <span class="icon">🔄</span>
+      <div class="title">Roster Diff</div>
+      <div class="desc">Compare two GCSS exports side-by-side. Tracks new soldiers, removals, and all license changes between reports.</div>
+    </a>
+  </div>
+
+  <div class="disclaimer">
+    ⚠ DISCLAIMER: This tool processes GCSS export data only. The DA Form 348 remains the authoritative record per AR 600-55 para 4-1.
+    All files are processed locally in your browser — no data is transmitted to any server.
+  </div>
+</main>
+
+<footer>UNIT TOOLS // 2225 EN CO // ALL PROCESSING IS LOCAL — NO DATA LEAVES YOUR DEVICE</footer>
+
+<script>
+  function tick(){
+    const n=new Date();
+    document.getElementById('clock').textContent=
+      n.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'2-digit'}).toUpperCase()+'\n'+n.toTimeString().slice(0,8);
+  }
+  setInterval(tick,1000);tick();
+</script>
+</body>
+</html>

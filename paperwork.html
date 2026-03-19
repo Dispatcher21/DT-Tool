@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<title>Paperwork Assistor // UNIT TOOLS</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<style>
+  :root{
+    --green:#4B5320;--green-lt:#6B7A32;--tan:#C8B560;--tan-lt:#DDD090;
+    --dark:#1A1F0E;--darker:#0F1208;--fg:#E8E4D0;--fg-dim:#9A9680;
+    --red:#CC2200;--ok:#5A8A30;
+    --panel:#222810;--border:#3A4018;
+    --mono:'Share Tech Mono',monospace;--cond:'Barlow Condensed',sans-serif;--body:'Barlow',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--darker);color:var(--fg);font-family:var(--body);min-height:100vh;
+    background-image:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(74,83,32,.03) 2px,rgba(74,83,32,.03) 4px);}
+  header{background:var(--green);border-bottom:3px solid var(--tan);padding:0 2rem;
+    display:flex;align-items:center;gap:1.25rem;height:96px;position:sticky;top:0;z-index:100;}
+  .he img{height:68px;width:68px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4));}
+  .ht h1{font-family:var(--cond);font-size:1.95rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#fff;line-height:1;}
+  .ht p{font-family:var(--mono);font-size:.85rem;color:var(--tan-lt);letter-spacing:.08em;margin-top:4px;}
+  .ht .made{font-size:.55rem;color:var(--tan-lt);letter-spacing:.06em;margin-top:2px;opacity:.7;}
+  .hb{margin-left:auto;font-family:var(--mono);font-size:.85rem;color:var(--tan);text-align:right;line-height:1.6;white-space:pre;}
+  .back-bar{background:var(--dark);border-bottom:1px solid var(--border);padding:.5rem 1.5rem;display:flex;align-items:center;gap:.75rem;}
+  .back-btn{font-family:var(--mono);font-size:.75rem;color:var(--tan);text-decoration:none;}
+  .back-sep,.back-cur{font-family:var(--mono);font-size:.75rem;color:var(--fg-dim);}
+  main{max-width:900px;margin:0 auto;padding:2rem 1rem;}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:4px;margin-bottom:1.25rem;overflow:hidden;}
+  .ph{background:var(--green);padding:.7rem 1rem;display:flex;align-items:center;gap:.75rem;}
+  .ph h2{font-family:var(--cond);font-size:1rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#fff;}
+  .ph .tag{margin-left:auto;font-family:var(--mono);font-size:.6rem;color:var(--tan);background:rgba(0,0,0,.3);padding:2px 8px;border-radius:2px;}
+  .pb{padding:1.25rem;}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+  @media(max-width:600px){.form-grid{grid-template-columns:1fr;}}
+  .field{display:flex;flex-direction:column;gap:.35rem;}
+  .field label{font-family:var(--cond);font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-dim);}
+  .field input,.field select{background:var(--darker);border:1px solid var(--border);border-radius:3px;
+    color:var(--fg);font-family:var(--mono);font-size:.85rem;padding:.5rem .75rem;outline:none;width:100%;}
+  .field input:focus,.field select:focus{border-color:var(--tan);}
+  .field select option{background:var(--darker);}
+  .roster-row{display:grid;grid-template-columns:1fr auto;gap:.75rem;align-items:start;}
+  .uz{border:2px dashed var(--border);border-radius:4px;padding:1rem;text-align:center;
+    cursor:pointer;transition:all .2s;position:relative;background:rgba(0,0,0,.2);}
+  .uz:hover{border-color:var(--tan);}
+  .uz.has{border-color:var(--ok);border-style:solid;background:rgba(90,138,48,.08);}
+  .uz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+  .uz .lbl{font-family:var(--cond);font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--fg);display:block;}
+  .uz .hint{font-family:var(--mono);font-size:.6rem;color:var(--fg-dim);}
+  .uz .fname{display:none;font-family:var(--mono);font-size:.65rem;color:var(--ok);margin-top:.3rem;word-break:break-all;}
+  .uz.has .fname{display:block;}
+  .uz.has .hint{display:none;}
+  .soldier-list{max-height:180px;overflow-y:auto;border:1px solid var(--border);border-radius:3px;}
+  .soldier-item{display:flex;align-items:center;gap:.5rem;padding:.3rem .5rem;border-bottom:1px solid var(--border);
+    font-family:var(--mono);font-size:.72rem;cursor:pointer;}
+  .soldier-item:hover{background:rgba(200,181,96,.06);}
+  .soldier-item input[type=checkbox]{accent-color:var(--ok);}
+  .soldier-item.selected{background:rgba(90,138,48,.1);}
+  .sel-count{font-family:var(--mono);font-size:.65rem;color:var(--tan);margin-top:.35rem;}
+  .btn{font-family:var(--cond);font-size:1rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+    padding:.75rem 2rem;border:none;border-radius:3px;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:.5rem;}
+  .btn-primary{background:var(--ok);color:#fff;border:2px solid #6AAA38;width:100%;justify-content:center;font-size:1.1rem;margin-top:1rem;}
+  .btn-primary:hover:not(:disabled){background:#6AAA38;}
+  .btn-primary:disabled{opacity:.4;cursor:not-allowed;}
+  .btn-sm{background:var(--dark);color:var(--fg-dim);border:1px solid var(--border);font-size:.75rem;
+    padding:.3rem .75rem;font-family:var(--cond);font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;border-radius:2px;}
+  .btn-sm:hover{border-color:var(--tan);color:var(--tan);}
+  .btn-dl{background:var(--dark);color:var(--tan);border:2px solid var(--tan);text-decoration:none;
+    display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
+    padding:.6rem 1.5rem;font-family:var(--cond);font-size:.95rem;font-weight:700;
+    letter-spacing:.15em;text-transform:uppercase;border-radius:3px;margin:.25rem;}
+  .btn-dl:hover{background:var(--tan);color:var(--dark);}
+  .warn{background:rgba(200,181,96,.08);border:1px solid rgba(200,181,96,.25);border-radius:4px;
+    padding:.6rem .9rem;font-family:var(--mono);font-size:.7rem;color:var(--tan);margin-bottom:.75rem;line-height:1.5;}
+  .err{background:rgba(204,34,0,.1);border:1px solid #CC2200;border-radius:4px;
+    padding:.75rem 1rem;font-family:var(--mono);font-size:.8rem;color:#FF6655;margin:.75rem 0;}
+  .hidden{display:none!important;}
+  .spin-wrap{display:none;align-items:center;gap:.75rem;padding:.75rem;font-family:var(--mono);font-size:.75rem;color:var(--tan);}
+  .spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--tan);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .success{background:rgba(90,138,48,.15);border:1px solid var(--ok);border-radius:4px;
+    padding:.75rem 1rem;font-family:var(--cond);font-size:.9rem;font-weight:700;color:#88CC44;text-align:center;margin-bottom:1rem;}
+  .dl-row{display:flex;flex-wrap:wrap;justify-content:center;gap:.25rem;}
+  .veh-key-preview{font-family:var(--mono);font-size:.65rem;color:var(--tan);margin-top:.35rem;line-height:1.6;
+    background:rgba(0,0,0,.2);border:1px solid var(--border);border-radius:3px;padding:.4rem .6rem;}
+</style>
+</head>
+<body>
+<header>
+  <div class="he"><img src="assets/icon.png" alt="Unit Tools"></div>
+  <div class="ht">
+    <h1>UNIT TOOLS</h1>
+    <p>2225 EN CO // ADMINISTRATIVE TOOLKIT</p>
+    <p class="made">MADE BY: SGT SONNIER, JOHN (WIP)</p>
+  </div>
+  <div class="hb" id="clock"></div>
+</header>
+<div class="back-bar">
+  <a class="back-btn" href="index.html">← BACK</a>
+  <span class="back-sep">//</span>
+  <span class="back-cur">PAPERWORK ASSISTOR</span>
+</div>
+<main>
+
+  <!-- Answer Sheets -->
+  <div class="panel">
+    <div class="ph"><h2>Written Exam Answer Sheet Generator</h2><span class="tag">PDF OUTPUT</span></div>
+    <div class="pb">
+      <div class="warn">⚠ AR 600-55 Para 5-4: Answer keys must be secured. This tool is for examiners only — do not share with soldiers being tested.</div>
+
+      <!-- Roster or manual -->
+      <div style="margin-bottom:1rem;">
+        <div style="font-family:var(--cond);font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-dim);margin-bottom:.5rem;">LOAD TROOP INFO (OPTIONAL — for batch generation)</div>
+        <div class="roster-row">
+          <div class="uz" id="uz-ans-troop">
+            <input type="file" id="f-ans-troop" accept=".xlsx,.xls" onchange="loadAnsTroop()">
+            <span class="lbl">📋 Drop Troop Info File</span>
+            <span class="hint">Loads soldier list for selection</span>
+            <span class="fname" id="fn-ans-troop"></span>
+          </div>
+          <div>
+            <div class="soldier-list hidden" id="soldier-list"></div>
+            <div class="sel-count hidden" id="sel-count"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label>Soldier Name (manual entry)</label>
+          <input type="text" id="ans-name" placeholder="LAST, FIRST" style="text-transform:uppercase">
+        </div>
+        <div class="field">
+          <label>Examiner Name</label>
+          <input type="text" id="ans-examiner" placeholder="SGT SMITH, JOHN">
+        </div>
+        <div class="field">
+          <label>Vehicle Type</label>
+          <select id="ans-vehicle" onchange="updateKeyPreview()">
+            <option value="HMMV">HMMV / HMMWV</option>
+            <option value="CBT">CBT (Combat)</option>
+            <option value="LMTV">LMTV</option>
+            <option value="HEMTT">HEMTT</option>
+            <option value="LET">LET</option>
+            <option value="PLS">PLS</option>
+            <option value="BAP">BAP</option>
+            <option value="BEB">BEB</option>
+            <option value="WRECKER">WRECKER</option>
+            <option value="FUELER">FUELER</option>
+            <option value="DOZER">DOZER</option>
+            <option value="CRANE">CRANE</option>
+            <option value="HMEE">HMEE</option>
+            <option value="GSA">GSA</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Date</label>
+          <input type="date" id="ans-date">
+        </div>
+      </div>
+      <div class="veh-key-preview" id="key-preview"></div>
+
+      <div id="err-ans" class="err hidden"></div>
+      <div class="spin-wrap" id="spin-ans"><div class="spinner"></div><span>GENERATING ANSWER SHEETS...</span></div>
+      <button class="btn btn-primary" id="btn-ans" onclick="generateAnswerSheets()">⚡ GENERATE ANSWER SHEET(S)</button>
+    </div>
+  </div>
+
+  <!-- Road Test -->
+  <div class="panel">
+    <div class="ph"><h2>DA 6125 Road Test Stamper</h2><span class="tag">PDF STAMP</span></div>
+    <div class="pb">
+      <div class="warn">⚠ Complete the road test first. Use this tool to stamp the completed DA 6125 after the test is finished — not before.</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Soldier Name</label>
+          <input type="text" id="rt-soldier" placeholder="LAST, FIRST" style="text-transform:uppercase">
+        </div>
+        <div class="field">
+          <label>Examiner Name</label>
+          <input type="text" id="rt-examiner" placeholder="SGT SMITH, JOHN">
+        </div>
+        <div class="field">
+          <label>Vehicle / Equipment</label>
+          <input type="text" id="rt-vehicle" placeholder="e.g. M1097A2 HMMWV">
+        </div>
+        <div class="field">
+          <label>Route / Location</label>
+          <input type="text" id="rt-route" placeholder="e.g. POST ROUTE A">
+        </div>
+        <div class="field">
+          <label>Date</label>
+          <input type="date" id="rt-date">
+        </div>
+      </div>
+      <div id="err-rt" class="err hidden"></div>
+      <div class="spin-wrap" id="spin-rt"><div class="spinner"></div><span>STAMPING ROAD TEST...</span></div>
+      <div id="dl-rt" class="hidden" style="margin-top:.75rem;">
+        <div class="success">✓ ROAD TEST STAMPED</div>
+        <div class="dl-row">
+          <button class="btn-dl" onclick="dlRT()">📄 DOWNLOAD STAMPED DA 6125</button>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btn-rt" onclick="generateRoadTest()">⚡ STAMP ROAD TEST</button>
+    </div>
+  </div>
+
+</main>
+<script src="js/core.js"></script>
+<script>
+startClock('clock');
+
+// Set default date to today
+document.getElementById('ans-date').valueAsDate = new Date();
+document.getElementById('rt-date').valueAsDate  = new Date();
+updateKeyPreview();
+
+let ansTroopList = [];   // [{name, rank, platoon}]
+let selectedSoldiers = new Set();
+let lastRTBlob = null;
+
+// ── Troop loader for answer sheets ────────────────────────────────
+function loadAnsTroop() {
+  const input = document.getElementById('f-ans-troop');
+  if (!input.files.length) return;
+  const file = input.files[0];
+  workbookFromFile(file).then(wb => {
+    const troopMap = parseTroopInfo(wb);
+    ansTroopList = Object.values(troopMap).sort((a,b)=>{
+      const po = (PLATOON_ORDER[a.platoon]??99)-(PLATOON_ORDER[b.platoon]??99);
+      return po||a.last.localeCompare(b.last);
+    });
+    document.getElementById('uz-ans-troop').classList.add('has');
+    document.getElementById('fn-ans-troop').textContent = file.name;
+    renderSoldierList();
+  });
+}
+
+function renderSoldierList() {
+  const list = document.getElementById('soldier-list');
+  const cnt  = document.getElementById('sel-count');
+  if (!ansTroopList.length) return;
+  list.classList.remove('hidden');
+  cnt.classList.remove('hidden');
+
+  list.innerHTML = ansTroopList.map((s,i) => {
+    const name = `${s.last}, ${s.first}`;
+    return `<div class="soldier-item ${selectedSoldiers.has(name)?'selected':''}" onclick="toggleSoldier('${name}',this)">
+      <input type="checkbox" ${selectedSoldiers.has(name)?'checked':''} onclick="event.stopPropagation()">
+      <span>${s.rank} ${name}</span>
+      <span style="margin-left:auto;color:var(--fg-dim);font-size:.6rem">${s.platoon}</span>
+    </div>`;
+  }).join('');
+
+  // Select all / none buttons
+  const header = `<div style="display:flex;gap:.5rem;padding:.3rem .5rem;border-bottom:1px solid var(--border);">
+    <button class="btn-sm" onclick="selectAll()">ALL</button>
+    <button class="btn-sm" onclick="selectNone()">NONE</button>
+    <span style="font-family:var(--mono);font-size:.6rem;color:var(--fg-dim);margin-left:auto;align-self:center">${selectedSoldiers.size} selected</span>
+  </div>`;
+  list.innerHTML = header + list.innerHTML;
+  cnt.textContent = selectedSoldiers.size + ' soldiers selected';
+}
+
+function toggleSoldier(name, el) {
+  if (selectedSoldiers.has(name)) selectedSoldiers.delete(name);
+  else selectedSoldiers.add(name);
+  renderSoldierList();
+}
+function selectAll()  { ansTroopList.forEach(s=>selectedSoldiers.add(`${s.last}, ${s.first}`)); renderSoldierList(); }
+function selectNone() { selectedSoldiers.clear(); renderSoldierList(); }
+
+// ── Answer key preview ────────────────────────────────────────────
+function updateKeyPreview() {
+  const veh  = document.getElementById('ans-vehicle').value;
+  const key  = ANSWER_KEYS[veh] || [];
+  const prev = document.getElementById('key-preview');
+  if (!key.length) { prev.textContent = 'No answer key loaded for this vehicle.'; return; }
+  const isCBT = veh === 'CBT';
+  let txt = `KEY (${key.length} questions): `;
+  txt += key.map((a,i) => `${i+1}.${a}`).join('  ');
+  prev.textContent = txt;
+}
+
+// ── Answer Sheet Generator ────────────────────────────────────────
+function generateAnswerSheets() {
+  const veh      = document.getElementById('ans-vehicle').value;
+  const examiner = document.getElementById('ans-examiner').value.trim().toUpperCase();
+  const dateVal  = document.getElementById('ans-date').value;
+  const manualName = document.getElementById('ans-name').value.trim().toUpperCase();
+  showErr('err-ans', null);
+
+  if (!dateVal) { showErr('err-ans', 'Please enter a date.'); return; }
+  const dateStr = new Date(dateVal + 'T12:00:00').toLocaleDateString('en-US',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();
+
+  // Build soldier list — selected from troop OR manual entry
+  let soldiers = [];
+  if (selectedSoldiers.size > 0) {
+    soldiers = [...selectedSoldiers];
+  } else if (manualName) {
+    soldiers = [manualName];
+  } else {
+    showErr('err-ans', 'Enter a soldier name or load a troop info file and select soldiers.');
+    return;
+  }
+
+  const spin = document.getElementById('spin-ans');
+  spin.style.display = 'flex';
+  document.getElementById('btn-ans').disabled = true;
+
+  setTimeout(() => {
+    try {
+      const blob = buildAnswerSheetsPDF(soldiers, veh, examiner, dateStr);
+      triggerDownload(blob, `AnswerSheets_${veh}_${dateStamp()}.pdf`);
+    } catch(e) { showErr('err-ans', 'Error: ' + e.message); }
+    spin.style.display = 'none';
+    document.getElementById('btn-ans').disabled = false;
+  }, 50);
+}
+
+function buildAnswerSheetsPDF(soldiers, veh, examiner, dateStr) {
+  const {jsPDF} = window.jspdf;
+  const key      = ANSWER_KEYS[veh] || [];
+  const isCBT    = veh === 'CBT';
+  const nQ       = key.length || 25;
+  const tfCutoff = isCBT ? 20 : 0; // CBT: first 20 MC, rest T/F
+
+  const doc = new jsPDF({orientation:'portrait', unit:'pt', format:'letter'});
+  const GREEN=[75,83,32], DARK=[43,58,26], TAN=[200,181,96];
+  const W = doc.internal.pageSize.getWidth();
+
+  soldiers.forEach((soldierName, idx) => {
+    if (idx > 0) doc.addPage();
+
+    let y = 40;
+
+    // Header banner
+    doc.setFillColor(...DARK); doc.rect(40, y, W-80, 38, 'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(13); doc.setFont('helvetica','bold');
+    doc.text('WRITTEN EXAMINATION — ANSWER SHEET', W/2, y+14, {align:'center'});
+    doc.setFontSize(8); doc.setFont('helvetica','normal');
+    doc.text(`AR 600-55 COMPLIANT  //  EXAMINER COPY — SECURE DOCUMENT`, W/2, y+28, {align:'center'});
+    y += 50;
+
+    // Info table row 1
+    const cols1 = [['NAME OF DRIVER', soldierName], ['VEHICLE', veh], ['DATE', dateStr]];
+    const cw = (W-80)/3;
+    cols1.forEach(([lbl,val], i) => {
+      const x = 40 + i*cw;
+      doc.setFillColor(...GREEN); doc.rect(x, y, cw-2, 14, 'F');
+      doc.setTextColor(255,255,255); doc.setFontSize(7); doc.setFont('helvetica','bold');
+      doc.text(lbl, x+cw/2-1, y+10, {align:'center'});
+      doc.setFillColor(248,248,248); doc.rect(x, y+14, cw-2, 18, 'F');
+      doc.setTextColor(0,0,0); doc.setFontSize(9); doc.setFont('helvetica','bold');
+      doc.text(val, x+cw/2-1, y+26, {align:'center'});
+    });
+    y += 38;
+
+    // Info table row 2 — examiner
+    doc.setFillColor(...GREEN); doc.rect(40, y, W-80, 14, 'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(7); doc.setFont('helvetica','bold');
+    doc.text('NAME OF EXAMINER', W/2, y+10, {align:'center'});
+    doc.setFillColor(248,248,248); doc.rect(40, y+14, W-80, 18, 'F');
+    doc.setTextColor(0,0,0); doc.setFontSize(9); doc.setFont('helvetica','bold');
+    doc.text(examiner || '________________________________', W/2, y+26, {align:'center'});
+    y += 42;
+
+    // Answer grid
+    // Columns: 5 wide
+    const cols = 5;
+    const rows = Math.ceil(nQ / cols);
+    const cellW = (W-80) / cols;
+    const cellH = 22;
+
+    // Header row
+    doc.setFillColor(...GREEN);
+    doc.rect(40, y, W-80, 14, 'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(7); doc.setFont('helvetica','bold');
+    if (isCBT) {
+      doc.text('SECTION I — MULTIPLE CHOICE (Questions 1–20)', 40+4, y+10);
+    } else {
+      doc.text(`ANSWER GRID — ${nQ} QUESTIONS`, W/2, y+10, {align:'center'});
+    }
+    y += 14;
+
+    // Draw answer cells
+    for (let q = 1; q <= (isCBT ? 20 : nQ); q++) {
+      const col = (q-1) % cols;
+      const row = Math.floor((q-1) / cols);
+      const x   = 40 + col * cellW;
+      const cy  = y + row * cellH;
+      const ans = key[q-1] || '';
+      const isCorrect = !!ans;
+
+      // Cell background
+      if (isCorrect) {
+        doc.setFillColor(212, 237, 218); // light green for answered
+      } else {
+        doc.setFillColor(248,248,248);
+      }
+      doc.rect(x, cy, cellW-1, cellH-1, 'F');
+      doc.setDrawColor(180,180,180); doc.rect(x, cy, cellW-1, cellH-1);
+
+      // Question number
+      doc.setTextColor(120,120,120); doc.setFontSize(7); doc.setFont('helvetica','normal');
+      doc.text(String(q), x+3, cy+9);
+
+      // Answer (big, bold, green if correct)
+      if (ans) {
+        doc.setTextColor(46,125,50); doc.setFontSize(11); doc.setFont('helvetica','bold');
+        doc.text(ans + ' ✓', x + cellW/2 - 1, cy+15, {align:'center'});
+      } else {
+        // Blank boxes A B C D
+        const opts = ['A','B','C','D'];
+        doc.setTextColor(180,180,180); doc.setFontSize(7);
+        opts.forEach((o,oi) => doc.text(o, x+8+oi*10, cy+15));
+      }
+    }
+    y += rows * cellH + 8;
+
+    // CBT T/F section
+    if (isCBT) {
+      const tfQ = key.slice(20);
+      const tfRows = Math.ceil(tfQ.length / cols);
+
+      doc.setFillColor(...GREEN);
+      doc.rect(40, y, W-80, 14, 'F');
+      doc.setTextColor(255,255,255); doc.setFontSize(7); doc.setFont('helvetica','bold');
+      doc.text('SECTION II — TRUE / FALSE (Questions 21–' + nQ + ')', 40+4, y+10);
+      y += 14;
+
+      tfQ.forEach((ans, ti) => {
+        const qNum = 21 + ti;
+        const col  = ti % cols;
+        const row  = Math.floor(ti / cols);
+        const x    = 40 + col * cellW;
+        const cy   = y + row * cellH;
+
+        doc.setFillColor(ans === 'TRUE' ? 212:255, ans === 'TRUE' ? 237:235, ans === 'TRUE' ? 218:238);
+        doc.rect(x, cy, cellW-1, cellH-1, 'F');
+        doc.setDrawColor(180,180,180); doc.rect(x, cy, cellW-1, cellH-1);
+
+        doc.setTextColor(120,120,120); doc.setFontSize(7); doc.setFont('helvetica','normal');
+        doc.text(String(qNum), x+3, cy+9);
+
+        const color = ans === 'TRUE' ? [46,125,50] : [198,40,40];
+        doc.setTextColor(...color); doc.setFontSize(9); doc.setFont('helvetica','bold');
+        doc.text(ans + ' ✓', x+cellW/2-1, cy+15, {align:'center'});
+      });
+      y += tfRows * cellH + 8;
+    }
+
+    // Score box
+    y += 4;
+    doc.setFillColor(248,248,248); doc.rect(40, y, W-80, 28, 'F');
+    doc.setDrawColor(180,180,180); doc.rect(40, y, W-80, 28);
+    doc.setTextColor(0,0,0); doc.setFontSize(8); doc.setFont('helvetica','bold');
+    doc.text('SCORE:', 50, y+16);
+    doc.text(`____ / ${nQ}`, 110, y+16);
+    doc.text('PASS / FAIL (circle):', 200, y+16);
+    doc.text('EXAMINER SIGNATURE: ___________________________', W-280, y+16);
+  });
+
+  return new Blob([doc.output('arraybuffer')], {type:'application/pdf'});
+}
+
+// ── Road Test Stamper ─────────────────────────────────────────────
+async function generateRoadTest() {
+  const soldier  = document.getElementById('rt-soldier').value.trim().toUpperCase();
+  const examiner = document.getElementById('rt-examiner').value.trim().toUpperCase();
+  const vehicle  = document.getElementById('rt-vehicle').value.trim().toUpperCase();
+  const route    = document.getElementById('rt-route').value.trim().toUpperCase();
+  const dateVal  = document.getElementById('rt-date').value;
+  showErr('err-rt', null);
+
+  if (!soldier)  { showErr('err-rt', 'Enter soldier name.'); return; }
+  if (!examiner) { showErr('err-rt', 'Enter examiner name.'); return; }
+  if (!vehicle)  { showErr('err-rt', 'Enter vehicle/equipment.'); return; }
+  if (!dateVal)  { showErr('err-rt', 'Select a date.'); return; }
+
+  const dateStr = new Date(dateVal + 'T12:00:00').toLocaleDateString('en-US',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();
+
+  const spin = document.getElementById('spin-rt');
+  spin.style.display='flex';
+  document.getElementById('btn-rt').disabled=true;
+  document.getElementById('dl-rt').classList.add('hidden');
+
+  try {
+    // Load the road test PDF template
+    const resp = await fetch('assets/road_test.pdf');
+    if (!resp.ok) throw new Error('Could not load road_test.pdf template.');
+    const pdfBytes = await resp.arrayBuffer();
+    const { PDFDocument, rgb, StandardFonts } = PDFLib;
+    const pdfDoc = await PDFDocument.load(pdfBytes);
+    const font   = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const pages  = pdfDoc.getPages();
+    const page   = pages[0];
+    const { height } = page.getSize();
+
+    const stamp = (text, x, y, size=9) => {
+      page.drawText(text, {
+        x, y: height - y,
+        size, font,
+        color: rgb(0.18, 0.31, 0.08),
+      });
+    };
+
+    // Stamp fields — coordinates tuned for DA 6125 layout
+    stamp(soldier,  140, 108, 9);
+    stamp(examiner, 140, 120, 9);
+    stamp(vehicle,  390, 108, 9);
+    stamp(route,    390, 120, 9);
+    stamp(dateStr,  390, 132, 9);
+
+    const stamped = await pdfDoc.save();
+    lastRTBlob = new Blob([stamped], {type:'application/pdf'});
+    document.getElementById('dl-rt').classList.remove('hidden');
+  } catch(e) {
+    // If template load fails, generate a standalone form
+    lastRTBlob = buildFallbackRoadTestPDF(soldier, examiner, vehicle, route, dateStr);
+    document.getElementById('dl-rt').classList.remove('hidden');
+    if (e.message.includes('road_test.pdf')) {
+      // silently fall back
+    } else {
+      showErr('err-rt', 'Template error, generated standalone form instead. (' + e.message + ')');
+    }
+  }
+
+  spin.style.display='none';
+  document.getElementById('btn-rt').disabled=false;
+}
+
+function buildFallbackRoadTestPDF(soldier, examiner, vehicle, route, dateStr) {
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'portrait',unit:'pt',format:'letter'});
+  const W = doc.internal.pageSize.getWidth();
+  const GREEN=[75,83,32], DARK=[43,58,26];
+  let y=40;
+
+  doc.setFillColor(...DARK); doc.rect(40,y,W-80,38,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(13); doc.setFont('helvetica','bold');
+  doc.text('DA FORM 6125 — ROAD TEST RECORD', W/2, y+14,{align:'center'});
+  doc.setFontSize(8); doc.setFont('helvetica','normal');
+  doc.text('AR 600-55 DRIVER PERFORMANCE TEST', W/2, y+28,{align:'center'});
+  y+=52;
+
+  const fields=[['DRIVER NAME', soldier],['EXAMINER', examiner],['VEHICLE', vehicle],['ROUTE', route],['DATE', dateStr]];
+  for (const [lbl,val] of fields) {
+    doc.setFillColor(...GREEN); doc.rect(40,y,W-80,14,'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(7); doc.setFont('helvetica','bold');
+    doc.text(lbl, 50, y+10);
+    doc.setFillColor(248,248,248); doc.rect(40,y+14,W-80,20,'F');
+    doc.setTextColor(0,0,0); doc.setFontSize(10); doc.setFont('helvetica','bold');
+    doc.text(val||'—', 50, y+27);
+    y+=38;
+  }
+
+  y+=10;
+  doc.setTextColor(120,120,120); doc.setFontSize(8); doc.setFont('helvetica','italic');
+  doc.text('Note: This is a standalone record. Upload the original DA 6125 PDF to road_test.pdf for full stamp capability.', 40, y, {maxWidth:W-80});
+
+  return new Blob([doc.output('arraybuffer')],{type:'application/pdf'});
+}
+
+function dlRT() { triggerDownload(lastRTBlob, `DA6125_${dateStamp()}.pdf`); }
+
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  if (!msg) { el.classList.add('hidden'); return; }
+  el.textContent='⚠ '+msg;
+  el.classList.remove('hidden');
+}
+</script>
+</body>
+</html>
