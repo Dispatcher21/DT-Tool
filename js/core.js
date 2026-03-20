@@ -5,8 +5,7 @@
 
 const EQUIP_MAP = {
 
-  // ── HMMWV / HMMWV Variants ────────────────────────────────────────
-  // Cargo / Troop Carriers
+  // ── HMMWV — Cargo / Troop Carriers ───────────────────────────────
   'M998':'HMMWV (Cargo/Troop)',
   'M998A1':'HMMWV (Cargo/Troop)',
   'M998A2':'HMMWV (Cargo/Troop)',
@@ -16,18 +15,15 @@ const EQUIP_MAP = {
   'M1097A1':'HMMWV (Heavy Cargo)',
   'M1097A2':'HMMWV (Heavy Cargo)',
   'M1123':'HMMWV (Heavy Cargo/Troop)',
-  // Utility / ECV
-  'M1113':'HMMWV (ECV Shelter Carrier)',
-  'M1114':'HMMWV (Up-Armored)',
-  'M1116':'HMMWV (Up-Armored/USAF)',
-  'M1151':'HMMWV (Armament Carrier)',
-  'M1151A1':'HMMWV (Armament Carrier)',
-  'M1152':'HMMWV (Cargo/Troop ECV)',
-  'M1152A1':'HMMWV (Cargo/Troop ECV)',
-  'M1165':'HMMWV (Special Ops/GSSV)',
-  'M1165A1':'HMMWV (Special Ops)',
-  'M1167':'HMMWV (TOW Carrier)',
-  // Armament Carriers
+  // HMMWV — Ambulance
+  'M997':'HMMWV (Ambulance)',
+  'M997A1':'HMMWV (Ambulance)',
+  'M997A2':'HMMWV (Ambulance)',
+  'M997A3':'HMMWV (Ambulance)',
+  'M1035':'HMMWV (Soft-Top Ambulance)',
+  'M1035A1':'HMMWV (Soft-Top Ambulance)',
+  'M1035A2':'HMMWV (Soft-Top Ambulance)',
+  // HMMWV — Armament Carriers
   'M1025':'HMMWV (Armament Carrier)',
   'M1025A1':'HMMWV (Armament Carrier)',
   'M1025A2':'HMMWV (Armament Carrier)',
@@ -38,7 +34,7 @@ const EQUIP_MAP = {
   'M1043A2':'HMMWV (Armament Carrier, Armor)',
   'M1044':'HMMWV (Armament Carrier, Armor w/ Winch)',
   'M1044A1':'HMMWV (Armament Carrier, Armor w/ Winch)',
-  // TOW Carriers
+  // HMMWV — TOW Carriers
   'M966':'HMMWV (TOW Carrier)',
   'M966A1':'HMMWV (TOW Carrier)',
   'M1045':'HMMWV (TOW Carrier, Armor)',
@@ -46,18 +42,31 @@ const EQUIP_MAP = {
   'M1045A2':'HMMWV (TOW Carrier, Armor)',
   'M1046':'HMMWV (TOW Carrier, Armor w/ Winch)',
   'M1046A1':'HMMWV (TOW Carrier, Armor w/ Winch)',
-  // Ambulance
-  'M997':'HMMWV (Ambulance)',
-  'M997A1':'HMMWV (Ambulance)',
-  'M997A2':'HMMWV (Ambulance)',
-  'M997A3':'HMMWV (Ambulance)',
-  // Shelter Carrier / S250
-  'M1035':'HMMWV (Soft Top Ambulance)',
-  'M1035A1':'HMMWV (Soft Top Ambulance)',
-  'M1035A2':'HMMWV (Soft Top Ambulance)',
-  // Trailers
+  // HMMWV — ECV / Up-Armored
+  'M1113':'HMMWV (ECV Shelter Carrier)',
+  'M1114':'HMMWV (Up-Armored)',
+  'M1116':'HMMWV (Up-Armored/USAF)',
+  'M1151':'HMMWV (Armament Carrier ECV)',
+  'M1151A1':'HMMWV (Armament Carrier ECV)',
+  'M1152':'HMMWV (Cargo/Troop ECV)',
+  'M1152A1':'HMMWV (Cargo/Troop ECV)',
+  'M1165':'HMMWV (Special Ops/GSSV)',
+  'M1165A1':'HMMWV (Special Ops)',
+  'M1167':'HMMWV (TOW Carrier ECV)',
+  // HMMWV — Trailers
   'M1101':'HMMWV Trailer (Light)',
   'M1102':'HMMWV Trailer (Heavy)',
+
+  // ── JLTV (Joint Light Tactical Vehicle) ──────────────────────────
+  'M1278':'JLTV (Heavy Guns Carrier)',
+  'M1278A1':'JLTV (Heavy Guns Carrier)',
+  'M1279':'JLTV (Utility)',
+  'M1279A1':'JLTV (Utility)',
+  'M1280':'JLTV (General Purpose)',
+  'M1280A1':'JLTV (General Purpose)',
+  'M1281':'JLTV (Close Combat Weapons Carrier)',
+  'M1281A1':'JLTV (Close Combat Weapons Carrier)',
+  'M1282':'JLTV Trailer',
 
   // ── LMTV (2.5-ton 4x4) ───────────────────────────────────────────
   'M1078':'LMTV (Cargo)',
@@ -66,40 +75,116 @@ const EQUIP_MAP = {
   'M1078A1P2':'LMTV (Cargo)',
   'M1078A1P2WOW':'LMTV (Cargo)',
   'M1078A1WW':'LMTV (Cargo)',
+  'M1078A2':'LMTV (Cargo)',
   'M1079':'LMTV (Van)',
   'M1079A1':'LMTV (Van)',
   'M1079A1R':'LMTV (Van)',
+  'M1079A2':'LMTV (Van)',
   'M1080':'LMTV (Chassis)',
+  'M1080A2':'LMTV (Chassis)',
   'M1081':'LMTV (Cargo, Airdrop)',
   'M1082':'LMTV Trailer',
+  'M1082A1':'LMTV Trailer',
 
   // ── MTV (5-ton 6x6) ───────────────────────────────────────────────
   'M1083':'MTV (Cargo)',
   'M1083A1':'MTV (Cargo)',
   'M1083A1P2':'MTV (Cargo)',
+  'M1083A2':'MTV (Cargo)',
   'M1084':'MTV (Cargo w/ Crane)',
   'M1084A1':'MTV (Cargo w/ Crane)',
   'M1084A1P2':'MTV (Cargo w/ Crane)',
+  'M1084A2':'MTV (Cargo w/ Crane)',
   'M1085':'MTV (LWB Cargo)',
   'M1085A1':'MTV (LWB Cargo)',
   'M1085A1P2':'MTV (LWB Cargo)',
   'M1085A1P2WOW':'MTV (LWB Cargo)',
+  'M1085A2':'MTV (LWB Cargo)',
   'M1086':'MTV (LWB Cargo w/ Crane)',
   'M1086A1':'MTV (LWB Cargo w/ Crane)',
+  'M1086A2':'MTV (LWB Cargo w/ Crane)',
   'M1087':'MTV (Expansible Van)',
   'M1087A1':'MTV (Expansible Van)',
+  'M1087A2':'MTV (Expansible Van)',
   'M1088':'MTV (Tractor)',
   'M1088A1':'MTV (Tractor)',
+  'M1088A2':'MTV (Tractor)',
   'M1089':'MTV (Wrecker)',
   'M1089A1':'MTV (Wrecker)',
+  'M1089A2':'MTV (Wrecker)',
   'M1090':'MTV (Dump)',
+  'M1090A2':'MTV (Dump)',
   'M1092':'MTV (Chassis)',
+  'M1092A2':'MTV (Chassis)',
   'M1093':'MTV (Cargo, Airdrop)',
   'M1094':'MTV (Dump, Airdrop)',
   'M1095':'MTV Trailer',
   'M1096':'MTV (LWB Chassis)',
+  'M1096A2':'MTV (LWB Chassis)',
+  'M1147':'MTV (LHST Trailer)',
   'M1148':'MTV (Load Handling System)',
+  'M1148A2':'MTV (Load Handling System)',
   'M1157':'MTV (10-Ton Dump)',
+  'M1157A2':'MTV (10-Ton Dump)',
+  'M1273':'MTV (10-Ton Dump Chassis)',
+  'M1273A2':'MTV (10-Ton Dump Chassis)',
+
+  // ── M939 Series (Legacy 5-ton 6x6) ───────────────────────────────
+  'M923':'M939 (Cargo)',
+  'M923A1':'M939 (Cargo)',
+  'M923A2':'M939 (Cargo)',
+  'M924':'M939 (Cargo, Fixed Sides)',
+  'M924A1':'M939 (Cargo, Fixed Sides)',
+  'M925':'M939 (Cargo w/ Winch)',
+  'M925A1':'M939 (Cargo w/ Winch)',
+  'M925A2':'M939 (Cargo w/ Winch)',
+  'M926':'M939 (Flatbed)',
+  'M926A1':'M939 (Flatbed)',
+  'M927':'M939 (LWB Cargo)',
+  'M927A1':'M939 (LWB Cargo)',
+  'M927A2':'M939 (LWB Cargo)',
+  'M928':'M939 (LWB Cargo w/ Winch)',
+  'M928A1':'M939 (LWB Cargo w/ Winch)',
+  'M928A2':'M939 (LWB Cargo w/ Winch)',
+  'M929':'M939 (Dump)',
+  'M929A1':'M939 (Dump)',
+  'M929A2':'M939 (Dump)',
+  'M930':'M939 (Dump w/ Winch)',
+  'M930A1':'M939 (Dump w/ Winch)',
+  'M930A2':'M939 (Dump w/ Winch)',
+  'M931':'M939 (Tractor)',
+  'M931A1':'M939 (Tractor)',
+  'M931A2':'M939 (Tractor)',
+  'M932':'M939 (Tractor w/ Winch)',
+  'M932A1':'M939 (Tractor w/ Winch)',
+  'M932A2':'M939 (Tractor w/ Winch)',
+  'M934':'M939 (Expansible Van)',
+  'M934A1':'M939 (Expansible Van)',
+  'M934A2':'M939 (Expansible Van)',
+  'M935':'M939 (Expansible Van w/ Lift Gate)',
+  'M935A1':'M939 (Expansible Van w/ Lift Gate)',
+  'M935A2':'M939 (Expansible Van w/ Lift Gate)',
+  'M936':'M939 (Wrecker)',
+  'M936A1':'M939 (Wrecker)',
+  'M936A2':'M939 (Wrecker)',
+
+  // ── M35 Series (Deuce and a Half, Legacy 2.5-ton) ─────────────────
+  'M35':'M35 (Cargo 2.5-Ton)',
+  'M35A1':'M35 (Cargo 2.5-Ton)',
+  'M35A2':'M35 (Cargo 2.5-Ton)',
+  'M35A3':'M35 (Cargo 2.5-Ton)',
+  'M36':'M35 (Cargo w/ Winch)',
+  'M36A1':'M35 (Cargo w/ Winch)',
+  'M36A2':'M35 (Cargo w/ Winch)',
+  'M342':'M35 (Dump)',
+  'M342A2':'M35 (Dump)',
+  'M49':'M35 (Fuel Tanker 1,200 Gal)',
+  'M49A2C':'M35 (Fuel Tanker 1,200 Gal)',
+  'M50':'M35 (Water Tanker 1,000 Gal)',
+  'M50A2':'M35 (Water Tanker 1,000 Gal)',
+  'M109':'M35 (Expansible Van)',
+  'M109A2':'M35 (Expansible Van)',
+  'M109A3':'M35 (Expansible Van)',
 
   // ── HEMTT (Heavy Expanded Mobility Tactical Truck) ────────────────
   'M977':'HEMTT (Cargo)',
@@ -109,9 +194,9 @@ const EQUIP_MAP = {
   'M978A2':'HEMTT (Fueler)',
   'M978A2 ':'HEMTT (Fueler)',
   'M978A4':'HEMTT (Fueler)',
-  'M983':'HEMTT (Tractor)',
+  'M983':'HEMTT (Tractor/MLRS Prime Mover)',
   'M983A2':'HEMTT (Tractor)',
-  'M983A4LET':'LET (Transporter)',
+  'M983A4LET':'LET (Light Equipment Transporter)',
   'M984':'HEMTT (Wrecker)',
   'M984A2':'HEMTT (Wrecker)',
   'M984A4WOW':'HEMTT (Wrecker)',
@@ -119,6 +204,8 @@ const EQUIP_MAP = {
   'M985':'HEMTT (Cargo w/ Crane)',
   'M985A2':'HEMTT (Cargo w/ Crane)',
   'M985A4WOW':'HEMTT (Cargo w/ Crane)',
+  'M1142':'HEMTT (Fire Fighting Truck)',
+  'M1158':'HEMTT (Water Tender)',
 
   // ── PLS (Palletized Load System) ──────────────────────────────────
   'M1074':'PLS (Truck)',
@@ -133,41 +220,145 @@ const EQUIP_MAP = {
   'M1977A2WOW':'PLS (Truck)',
   'M1977A2RWW':'PLS (Truck)',
 
-  // ── CBT (Common Bridge Transporter) ──────────────────────────────
-  'M1977A4':'CBT (Bridge Transporter)',
+  // ── HET (Heavy Equipment Transporter) ────────────────────────────
+  'M1070':'HET (Tractor)',
+  'M1070A1':'HET (Tractor)',
+  'M1000':'HET Semi-Trailer (70-Ton)',
+  'M911':'C-HET (Tractor, Legacy)',
+  'M747':'C-HET Semi-Trailer (60-Ton, Legacy)',
+  'M1300':'EHETS (Tractor)',
+  'M1302':'EHETS Semi-Trailer',
 
-  // ── DSB ───────────────────────────────────────────────────────────
+  // ── M915 Family (Line Haul / Engineer) ───────────────────────────
+  'M915':'M915 (Line Haul Tractor)',
+  'M915A1':'M915 (Line Haul Tractor)',
+  'M915A2':'M915 (Line Haul Tractor)',
+  'M915A3':'M915 (Line Haul Tractor)',
+  'M915A5':'M915 (Line Haul Tractor)',
+  'M916':'M916 (LET Tractor)',
+  'M916A1':'M916 (LET Tractor)',
+  'M916A2':'M916 (LET Tractor)',
+  'M917':'M917 (20-Ton Dump)',
+  'M917A1':'M917 (20-Ton Dump)',
+  'M917A2':'M917 (20-Ton Dump)',
+  'M917A3':'M917 (20-Ton Dump)',
+  'M918':'M918 (Bituminous Distributor)',
+  'M919':'M919 (Concrete Mixer)',
+  'M920':'M920 (MET Tractor)',
+  'M920A1':'M920 (MET Tractor)',
+
+  // ── Semitrailers ──────────────────────────────────────────────────
+  'M871':'Semitrailer (22.5-Ton Break-Bulk)',
+  'M871A1':'Semitrailer (22.5-Ton Break-Bulk)',
+  'M871A2':'Semitrailer (22.5-Ton Break-Bulk)',
+  'M872':'Semitrailer (Flatbed)',
+  'M872A1':'Semitrailer (Flatbed)',
+  'M872A2':'Semitrailer (Flatbed)',
+  'M872A3':'Semitrailer (Flatbed)',
+  'M969':'Semitrailer (5,000-Gal Fuel)',
+  'M969A1':'Semitrailer (5,000-Gal Fuel)',
+  'M969A2':'Semitrailer (5,000-Gal Fuel)',
+  'M970':'Semitrailer (5,000-Gal Aviation Fuel)',
+  'M970A1':'Semitrailer (5,000-Gal Aviation Fuel)',
+  'M972':'Semitrailer (5,000-Gal Water)',
+
+  // ── Water / Fuel Trailers ─────────────────────────────────────────
+  'M149':'Water Trailer (400 Gal)',
+  'M149A1':'Water Trailer (400 Gal)',
+  'M149A2':'Water Trailer (400 Gal)',
+  'M1112':'Water Trailer (400 Gal)',
+  'M131':'Fuel Semitrailer (5,000 Gal)',
+
+  // ── CBT / DSB / PLS / BAP ─────────────────────────────────────────
+  'M1977A4':'CBT (Common Bridge Transporter)',
   'M1975':'DSB (Dry Support Bridge)',
+  'M15':'BAP (Bridge Adapter Pallet)',
+  'M15A2':'BAP (Bridge Adapter Pallet)',
 
-  // ── BAP (Bridge Adapter Pallet) ───────────────────────────────────
-  'M15':'BAP',
-  'M15A2':'BAP',
-
-  // ── Engineer / Construction ───────────────────────────────────────
-  'AT422T':'CRANE',
-  'D7RII WIN':'DOZER',
-  'D7RII':'DOZER',
-  'JD240D LCR':'EXCAVATOR (HYEX)',
-  'TPI HMEE-I':'HMEE (Engineer Excavator)',
-  'TP I HMEE-I':'HMEE (Engineer Excavator)',
-  'M9':'ACE (Armored Combat Earthmover)',
-
-  // ── BEB / Bridge ─────────────────────────────────────────────────
+  // ── BEB / Bridge ──────────────────────────────────────────────────
   'MK2':'BEB (Bridge Erection Boat)',
   'M30':'BEB (Bridge Erection Boat)',
   'REPW R6BT':'BEB (Bridge Erection Boat)',
-  'REPWR6BT':'BRIDGE PIECE',
-  'M400W':'SKD STR (Straddle)',
+  'REPWR6BT':'Bridge Piece',
+  'M400W':'SKD STR (Straddle Carrier)',
+  'M945':'M939 Chassis (Ribbon Bridge Transporter)',
 
-  // ── Other Specialty ───────────────────────────────────────────────
-  'M7FRS':'FRS',
-  'M870':'LOWBED (40ft)',
-  'M870A1':'LOWBED (40ft)',
+  // ── MRAP Family ───────────────────────────────────────────────────
+  'M1224':'MRAP (MaxxPro)',
+  'M1224A1':'MRAP (MaxxPro)',
+  'M1235':'MRAP (MaxxPro Dash)',
+  'M1235A1':'MRAP (MaxxPro Dash DXM)',
+  'M1230':'MRAP (Cougar 4x4)',
+  'M1231':'MRAP (Cougar 6x6)',
+  'M1233':'MRAP (RG-33)',
+  'M1240':'MRAP (RG-33L)',
+  'M1277':'MRAP (MaxxPro MEAP)',
+
+  // ── AMPV (Armored Multi-Purpose Vehicle) ─────────────────────────
+  'M1283':'AMPV (General Purpose)',
+  'M1284':'AMPV (Mission Command)',
+  'M1285':'AMPV (Medical Treatment)',
+  'M1286':'AMPV (Medical Evacuation)',
+  'M1287':'AMPV (Mortar Carrier)',
+
+  // ── Engineer / Construction Equipment ────────────────────────────
+  'AT422T':'CRANE',
+  'D7RII WIN':'DOZER (D7)',
+  'D7RII':'DOZER (D7)',
+  'D7G':'DOZER (D7G)',
+  'D8R':'DOZER (D8)',
+  'JD240D LCR':'EXCAVATOR (John Deere 240D)',
+  'CAT330':'EXCAVATOR (CAT 330)',
+  'TPI HMEE-I':'HMEE (Engineer Excavator)',
+  'TP I HMEE-I':'HMEE (Engineer Excavator)',
+  'M9':'ACE (Armored Combat Earthmover)',
+  'M9ACE':'ACE (Armored Combat Earthmover)',
+  'D9R':'DOZER (D9, Armored)',
+  'M7FRS':'FRS (Forward Repair System)',
+  'M7A1':'FRS (Forward Repair System)',
+  'M7A2':'FRS (Forward Repair System)',
+
+  // ── Forklifts ─────────────────────────────────────────────────────
+  'RTFL':'RTFL (Rough Terrain Forklift)',
+  'ATLAS':'ATLAS (All Terrain Lifter)',
+  'MCRS':'RTFL (Rough Terrain Forklift)',
+  'RT636C':'RTFL (Rough Terrain Forklift)',
+  'RT4000':'RTFL (Rough Terrain Forklift)',
+  'JD544':'Wheel Loader (John Deere 544)',
+  'CAT950':'Wheel Loader (CAT 950)',
+  'CAT966':'Wheel Loader (CAT 966)',
 
   // ── GSA / Administrative Vehicles ────────────────────────────────
   'ACVCII1202':'GSA (Admin Vehicle)',
   'ACVCIJ1101':'GSA (Admin Vehicle)',
   'ACVCIB0201':'GSA (Admin Vehicle)',
+
+  // ── CUCV (Commercial Utility Cargo Vehicle) ───────────────────────
+  'M1008':'CUCV (Pickup)',
+  'M1008A1':'CUCV (Pickup)',
+  'M1009':'CUCV (Blazer/SUV)',
+  'M1010':'CUCV (Ambulance)',
+  'M1028':'CUCV (Utility)',
+  'M1028A1':'CUCV (Utility)',
+  'M1028A2':'CUCV (Utility)',
+
+  // ── Motorcycles / ATVs ────────────────────────────────────────────
+  'M1030':'Motorcycle (Military)',
+  'M1030A1':'Motorcycle (Military)',
+  'M1030M1':'Motorcycle (Military)',
+  'LTATV':'LTATV (Light Tactical ATV)',
+  'MULE':'MULE (Ground Tactical Vehicle)',
+
+  // ── Miscellaneous Trailers ────────────────────────────────────────
+  'M1061':'Generator Trailer',
+  'M200A1':'Generator Trailer',
+  'M105':'Cargo Trailer (1.5-Ton)',
+  'M105A2':'Cargo Trailer (1.5-Ton)',
+  'M116':'Cargo Trailer (3/4-Ton)',
+  'M101':'Cargo Trailer (3/4-Ton)',
+  'M101A2':'Cargo Trailer (3/4-Ton)',
+  'M101A3':'Cargo Trailer (3/4-Ton)',
+  'M1095':'MTV Trailer',
 };
 
 const RANK_ORDER = {
@@ -214,8 +405,18 @@ function normalizeName(name) {
 
 function simplifyQual(qualString) {
   if (!qualString) return 'UNKNOWN';
-  const model = qualString.split(':')[0].trim();
-  return EQUIP_MAP[model] || model;
+  const parts = qualString.split(':');
+  const model = parts[0].trim();
+  
+  // Layer 1 — check the map first
+  if (EQUIP_MAP[model]) return EQUIP_MAP[model];
+  
+  // Layer 2 — not in map, clean up the raw GCSS string
+  if (parts.length > 1) {
+    const nomenclature = parts[1].trim();
+    return `${model} — ${nomenclature}`;
+  }
+  return model;
 }
 
 // Convert Excel serial date number to JS Date
