@@ -69,6 +69,54 @@
 </style>
 </head>
 <body>
+<div id="install-banner" style="display:none;background:#4B5320;border-bottom:2px solid #C8B560;
+  padding:.65rem 1rem;display:none;align-items:center;justify-content:center;gap:.75rem;
+  position:sticky;top:0;z-index:999;flex-wrap:wrap;">
+  <span style="font-family:'Share Tech Mono',monospace;font-size:.72rem;color:#E8E4D0;" id="install-msg"></span>
+  <button id="install-btn" style="background:#C8B560;border:none;color:#0F1208;
+    font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.85rem;
+    letter-spacing:.1em;text-transform:uppercase;padding:.3rem .9rem;border-radius:2px;cursor:pointer;">
+    📲 ADD TO HOME SCREEN
+  </button>
+  <button onclick="document.getElementById('install-banner').style.display='none'"
+    style="background:transparent;border:1px solid #C8B560;color:#C8B560;
+    font-family:'Share Tech Mono',monospace;font-size:.7rem;padding:2px 8px;border-radius:2px;cursor:pointer;">✕</button>
+</div>
+
+<script>
+  const banner   = document.getElementById('install-banner');
+  const msg      = document.getElementById('install-msg');
+  const btn      = document.getElementById('install-btn');
+  const isIOS    = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone === true
+                    || window.matchMedia('(display-mode: standalone)').matches;
+
+  let deferredPrompt = null;
+
+  // Android — capture the browser's native install prompt
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (!isStandalone) {
+      msg.textContent = '📲 Install DT Helper as an app for quick access.';
+      banner.style.display = 'flex';
+      btn.onclick = async () => {
+        banner.style.display = 'none';
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+      };
+    }
+  });
+
+  // iOS — browser doesn't support the install prompt, show manual instructions
+  if (isIOS && !isStandalone) {
+    msg.textContent = 'Install: tap the Share button then "Add to Home Screen"';
+    btn.textContent = '📲 HOW TO INSTALL';
+    btn.onclick = () => alert('To install on iPhone:\n\n1. Tap the Share button (box with arrow) at the bottom of Safari\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add" in the top right');
+    banner.style.display = 'flex';
+  }
+</script>
 <header>
   <div class="he"><img src="assets/icon.png" alt="Unit Icon"></div>
   <div class="ht">
