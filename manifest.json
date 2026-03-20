@@ -1,0 +1,11 @@
+{
+  "name": "Unit Tools — 2225 EN CO",
+  "short_name": "DT Helper",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0F1208",
+  "theme_color": "#4B5320",
+  "icons": [
+    { "src": "assets/icon.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
