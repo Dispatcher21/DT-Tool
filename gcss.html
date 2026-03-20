@@ -315,6 +315,7 @@ function getUnresolvedCount() {
   const unresolvedGCSS  = matchReport.notInTroop.filter(n => !sessionAssignments[n]).length;
   //const unresolvedTroop = matchReport.notInGCSS.filter(s => !sessionStatuses[s.name]).length;
   //return unresolvedGCSS + unresolvedTroop;
+  return unresolvedGCSS;
 }
 
 function renderAlerts() {
