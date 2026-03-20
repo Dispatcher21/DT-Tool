@@ -313,8 +313,8 @@ function renderResultsPanel() {
 
 function getUnresolvedCount() {
   const unresolvedGCSS  = matchReport.notInTroop.filter(n => !sessionAssignments[n]).length;
-  const unresolvedTroop = matchReport.notInGCSS.filter(s => !sessionStatuses[s.name]).length;
-  return unresolvedGCSS + unresolvedTroop;
+  //const unresolvedTroop = matchReport.notInGCSS.filter(s => !sessionStatuses[s.name]).length;
+  //return unresolvedGCSS + unresolvedTroop;
 }
 
 function renderAlerts() {
@@ -393,48 +393,6 @@ function renderAlerts() {
         </div>`;
     }
     html += '</div>';
-  }
-
-  // NOT IN GCSS — markable
-  if (matchReport.notInGCSS.length) {
-    const unmarked = matchReport.notInGCSS.filter(s => !sessionStatuses[s.name]).length;
-    html += `<div style="font-family:var(--mono);font-size:.7rem;color:var(--fg-dim);margin:.75rem 0 .35rem;letter-spacing:.08em;">
-      IN TROOP INFO, NOT IN GCSS (${matchReport.notInGCSS.length})
-      ${unmarked > 0 ? `<span style="color:#FF8833"> — ${unmarked} unmarked</span>` : '<span style="color:#88CC44"> — all marked ✓</span>'}
-    </div>`;
-    for (const s of matchReport.notInGCSS.sort((a,b)=>a.name.localeCompare(b.name))) {
-      const status  = sessionStatuses[s.name];
-      const safeId  = ('ng_' + s.name).replace(/[^a-zA-Z0-9]/g,'_');
-      html += `
-        <div style="padding:.3rem 0;border-bottom:1px solid var(--border);" id="row_${safeId}">
-          <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;">
-            <span style="font-family:var(--mono);font-size:.72rem;">${s.rank ? s.rank+' ' : ''}${s.name}</span>
-            <span style="font-family:var(--mono);font-size:.6rem;color:var(--fg-dim)">${s.platoon}</span>
-            ${status
-              ? `<span class="pill-status">${status.status}</span>
-                 <button class="btn-assign btn-assign-cancel" onclick="clearStatus('${s.name}')">✕ CLEAR</button>`
-              : `<button class="btn-assign btn-mark-open" onclick="toggleMarkForm('${safeId}')">⚑ MARK STATUS</button>`
-            }
-          </div>
-          <div class="assign-row" id="form_${safeId}">
-            <div class="assign-field">
-              <label>Status</label>
-              <select id="stat_${safeId}">
-                <option value="">— SELECT —</option>
-                <option>TRANSFERRED</option>
-                <option>SEPARATED</option>
-                <option>TDY</option>
-                <option>ATTACHED</option>
-                <option>PENDING GCSS UPDATE</option>
-              </select>
-            </div>
-            <div style="display:flex;gap:.4rem;align-items:flex-end;padding-bottom:2px;">
-              <button class="btn-assign btn-mark-save" onclick="saveStatus('${s.name}','${safeId}')">✓ SAVE</button>
-              <button class="btn-assign btn-assign-cancel" onclick="toggleMarkForm('${safeId}')">CANCEL</button>
-            </div>
-          </div>
-        </div>`;
-    }
   }
 
   sec.innerHTML = html;
