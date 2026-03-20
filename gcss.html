@@ -97,7 +97,6 @@
   .alert-list li{font-family:var(--mono);font-size:.72rem;padding:.2rem 0;color:var(--fg-dim);}
   .alert-list li span.tag-exp{color:#FF5533;}
   .alert-list li span.tag-warn{color:#FF8833;}
-
   @media(max-width:600px){
     header{height:auto;min-height:64px;padding:.6rem 1rem;gap:.75rem;flex-wrap:wrap;}
     .he img{height:44px;width:44px;}
@@ -122,13 +121,8 @@
   .btn-assign-save:hover{background:#6AAA38;}
   .btn-assign-cancel{background:transparent;color:var(--fg-dim);border:1px solid var(--border);}
   .btn-assign-cancel:hover{border-color:var(--red);color:var(--red);}
-  .btn-mark-open{background:rgba(200,181,96,.15);color:var(--tan);border:1px solid rgba(200,181,96,.3);}
-  .btn-mark-open:hover{background:rgba(200,181,96,.25);}
-  .btn-mark-save{background:var(--tan);color:var(--dark);}
-  .pill-status{display:inline-block;font-family:var(--mono);font-size:.6rem;padding:1px 6px;
-    border-radius:10px;margin-left:.4rem;background:rgba(200,181,96,.15);
-    border:1px solid rgba(200,181,96,.3);color:var(--tan);}
   .assigned-tag{color:#88CC44;font-family:var(--mono);font-size:.65rem;margin-left:.4rem;}
+  .link-hint{font-family:var(--mono);font-size:.6rem;color:var(--fg-dim);margin-top:.2rem;}
 </style>
 </head>
 <body>
@@ -168,7 +162,6 @@
           <span class="fname" id="fn-troop"></span>
         </div>
       </div>
-      <!-- Saved files bars -->
       <div class="saved-bar" id="saved-gcss-bar">
         <div class="saved-info" id="saved-gcss-info"></div>
         <button class="sbtn sbtn-use" onclick="useSaved('gcss')">⚡ USE SAVED</button>
@@ -190,11 +183,11 @@
     <div class="ph"><h2>Results</h2><span class="tag" id="results-tag">—</span></div>
     <div class="pb">
       <div class="stats-grid">
-        <div class="stat-card ok">  <div class="stat-num" id="s-total">0</div>   <div class="stat-lbl">TOTAL SOLDIERS</div></div>
-        <div class="stat-card red"> <div class="stat-num" id="s-exp">0</div>     <div class="stat-lbl">EXPIRED</div></div>
+        <div class="stat-card ok">   <div class="stat-num" id="s-total">0</div>  <div class="stat-lbl">TOTAL SOLDIERS</div></div>
+        <div class="stat-card red">  <div class="stat-num" id="s-exp">0</div>    <div class="stat-lbl">EXPIRED</div></div>
         <div class="stat-card orange"><div class="stat-num" id="s-warn">0</div>  <div class="stat-lbl">EXPIRING 90D</div></div>
         <div class="stat-card orange"><div class="stat-num" id="s-rest">0</div>  <div class="stat-lbl">RESTRICTED</div></div>
-        <div class="stat-card">    <div class="stat-num" id="s-unk">0</div>      <div class="stat-lbl">UNMATCHED</div></div>
+        <div class="stat-card">      <div class="stat-num" id="s-unk">0</div>    <div class="stat-lbl">UNMATCHED</div></div>
       </div>
       <div id="alert-section"></div>
       <div id="err-gen" class="err hidden"></div>
@@ -202,8 +195,8 @@
       <div id="dl-panel" class="hidden">
         <div class="success">✓ REPORTS GENERATED</div>
         <div class="dl-row">
-          <button class="btn-dl" id="btn-dl-excel" onclick="dlExcel()">📊 DOWNLOAD EXCEL</button>
-          <button class="btn-dl" id="btn-dl-pdf"   onclick="dlPDF()">📄 DOWNLOAD PDF</button>
+          <button class="btn-dl" onclick="dlExcel()">📊 DOWNLOAD EXCEL</button>
+          <button class="btn-dl" onclick="dlPDF()">📄 DOWNLOAD PDF</button>
         </div>
       </div>
       <button class="btn btn-primary" id="btn-gen" onclick="generateReports()" style="margin-top:.75rem">⚡ GENERATE REPORTS (PDF + EXCEL)</button>
@@ -216,11 +209,9 @@
 startClock('clock');
 
 let gcssWB = null, troopWB = null;
-let soldiers = null, matchReport = null;
+let soldiers = null, matchReport = null, troopMap = null;
 let lastExcelBlob = null, lastPdfBlob = null;
-// Session-only corrections
-let sessionAssignments = {};   // name -> {platoon, rank, displayName}
-let sessionStatuses    = {};   // name -> {status} (TRANSFERRED, SEPARATED, etc.)
+let sessionAssignments = {};  // gcssName -> {platoon, rank, linkedName}
 
 // ── Saved files UI ─────────────────────────────────────────────────
 function refreshSavedBars() {
@@ -278,7 +269,6 @@ function processFiles() {
   showErr('err-upload', null);
   document.getElementById('panel-results').classList.add('hidden');
   sessionAssignments = {};
-  sessionStatuses    = {};
   const spin = document.getElementById('spin-process');
   spin.style.display = 'flex';
   document.getElementById('btn-process').disabled = true;
@@ -286,8 +276,8 @@ function processFiles() {
   setTimeout(() => {
     try {
       const gcssRows = parseGCSS(gcssWB);
-      const troopMap = parseTroopInfo(troopWB);
-      const result   = buildSoldiers(gcssRows, troopMap);
+      troopMap = parseTroopInfo(troopWB);
+      const result = buildSoldiers(gcssRows, troopMap);
       soldiers    = result.soldiers;
       matchReport = result.matchReport;
       renderResultsPanel();
@@ -305,19 +295,49 @@ function renderResultsPanel() {
   document.getElementById('s-rest').textContent  = matchReport.restricted.length;
   document.getElementById('s-unk').textContent   = getUnresolvedCount();
   document.getElementById('results-tag').textContent = `${matchReport.totalGCSS} SOLDIERS`;
-
   renderAlerts();
   document.getElementById('dl-panel').classList.add('hidden');
   lastExcelBlob = null; lastPdfBlob = null;
 }
 
+// Fixed: null-safe, always returns a number
 function getUnresolvedCount() {
-  const unresolvedGCSS  = matchReport.notInTroop.filter(n => !sessionAssignments[n]).length;
-  //const unresolvedTroop = matchReport.notInGCSS.filter(s => !sessionStatuses[s.name]).length;
-  //return unresolvedGCSS + unresolvedTroop;
-  return unresolvedGCSS;
+  if (!matchReport || !Array.isArray(matchReport.notInTroop)) return 0;
+  return matchReport.notInTroop.filter(n => !sessionAssignments[n]).length;
 }
 
+// ── Troop linking helpers ──────────────────────────────────────────
+function getUnlinkedTroopOptions() {
+  if (!troopMap || !soldiers || !matchReport) return '';
+  // Build set of already-matched names (in troop info and matched in GCSS)
+  const unmatched = new Set(matchReport.notInTroop || []);
+  const linked = new Set();
+  for (const [name, s] of Object.entries(soldiers)) {
+    if (!unmatched.has(name)) linked.add(s.name);
+  }
+  // Also exclude names already linked this session
+  for (const asgn of Object.values(sessionAssignments)) {
+    if (asgn.linkedName) linked.add(asgn.linkedName);
+  }
+  return Object.entries(troopMap)
+    .filter(([name]) => !linked.has(name))
+    .sort(([a],[b]) => a.localeCompare(b))
+    .map(([name, info]) =>
+      `<option value="${name}">${name} (${info.platoon} / ${info.rank})</option>`)
+    .join('');
+}
+
+function autoFillFromTroop(safeId, selectedName) {
+  if (!selectedName || !troopMap) return;
+  const info = troopMap[selectedName];
+  if (!info) return;
+  const pltSel = document.getElementById('plt_' + safeId);
+  const rnkSel = document.getElementById('rnk_' + safeId);
+  if (pltSel && info.platoon) pltSel.value = info.platoon;
+  if (rnkSel && info.rank)    rnkSel.value = info.rank;
+}
+
+// ── Render alerts + assign section ────────────────────────────────
 function renderAlerts() {
   const sec = document.getElementById('alert-section');
   let html = '';
@@ -344,28 +364,38 @@ function renderAlerts() {
     html += '</ul>';
   }
 
-  // NOT IN TROOP INFO — assignable
-  if (matchReport.notInTroop.length) {
+  // Unmatched — assignable
+  if (matchReport.notInTroop && matchReport.notInTroop.length) {
     const unresolved = matchReport.notInTroop.filter(n => !sessionAssignments[n]).length;
     html += `<div style="font-family:var(--mono);font-size:.7rem;color:var(--tan);margin:.75rem 0 .35rem;letter-spacing:.08em;">
       IN GCSS, NOT IN TROOP INFO (${matchReport.notInTroop.length})
-      ${unresolved > 0 ? `<span style="color:#FF8833"> — ${unresolved} unassigned</span>` : '<span style="color:#88CC44"> — all assigned ✓</span>'}
+      ${unresolved > 0
+        ? `<span style="color:#FF8833"> — ${unresolved} unassigned</span>`
+        : '<span style="color:#88CC44"> — all assigned ✓</span>'}
     </div>`;
-    html += '<div id="not-in-troop-list">';
-    for (const name of matchReport.notInTroop.sort()) {
-      const asgn = sessionAssignments[name];
+    for (const name of [...matchReport.notInTroop].sort()) {
+      const asgn   = sessionAssignments[name];
       const safeId = name.replace(/[^a-zA-Z0-9]/g,'_');
+      const linkOpts = getUnlinkedTroopOptions();
       html += `
         <div style="padding:.3rem 0;border-bottom:1px solid var(--border);" id="row_${safeId}">
           <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;">
             <span style="font-family:var(--mono);font-size:.72rem;">${name}</span>
             ${asgn
-              ? `<span class="assigned-tag">✓ ${asgn.platoon} / ${asgn.rank}${asgn.displayName && asgn.displayName !== name ? ' / ' + asgn.displayName : ''}</span>
+              ? `<span class="assigned-tag">✓ ${asgn.platoon} / ${asgn.rank}${asgn.linkedName && asgn.linkedName !== name ? ' → ' + asgn.linkedName : ''}</span>
                  <button class="btn-assign btn-assign-cancel" onclick="clearAssignment('${name}')">✕ CLEAR</button>`
               : `<button class="btn-assign btn-assign-open" onclick="toggleAssignForm('${safeId}')">+ ASSIGN</button>`
             }
           </div>
           <div class="assign-row" id="form_${safeId}">
+            <div class="assign-field" style="min-width:240px;">
+              <label>Link to Troop Info Entry</label>
+              <select id="dname_${safeId}" onchange="autoFillFromTroop('${safeId}', this.value)">
+                <option value="">— No link / Manual entry —</option>
+                ${linkOpts}
+              </select>
+              <span class="link-hint">Selecting a match auto-fills Platoon and Rank</span>
+            </div>
             <div class="assign-field">
               <label>Platoon</label>
               <select id="plt_${safeId}">
@@ -382,10 +412,6 @@ function renderAlerts() {
                   .map(r=>`<option>${r}</option>`).join('')}
               </select>
             </div>
-            <div class="assign-field" style="min-width:180px;">
-              <label>Display Name (optional correction)</label>
-              <input type="text" id="dname_${safeId}" placeholder="${name}" style="text-transform:uppercase">
-            </div>
             <div style="display:flex;gap:.4rem;align-items:flex-end;padding-bottom:2px;">
               <button class="btn-assign btn-assign-save" onclick="saveAssignment('${name}','${safeId}')">✓ SAVE</button>
               <button class="btn-assign btn-assign-cancel" onclick="toggleAssignForm('${safeId}')">CANCEL</button>
@@ -393,7 +419,6 @@ function renderAlerts() {
           </div>
         </div>`;
     }
-    html += '</div>';
   }
 
   sec.innerHTML = html;
@@ -403,28 +428,29 @@ function renderAlerts() {
 function toggleAssignForm(safeId) {
   document.getElementById('form_'+safeId).classList.toggle('open');
 }
-function toggleMarkForm(safeId) {
-  document.getElementById('form_'+safeId).classList.toggle('open');
-}
 
 function saveAssignment(name, safeId) {
-  const platoon     = document.getElementById('plt_'+safeId).value;
-  const rank        = document.getElementById('rnk_'+safeId).value;
-  const displayName = document.getElementById('dname_'+safeId).value.trim().toUpperCase() || name;
+  const linkedName = document.getElementById('dname_'+safeId).value;
+  const platoon    = document.getElementById('plt_'+safeId).value;
+  const rank       = document.getElementById('rnk_'+safeId).value;
 
   if (!platoon || !rank) {
     alert('Please select both a Platoon and Rank before saving.');
     return;
   }
 
-  sessionAssignments[name] = { platoon, rank, displayName };
+  sessionAssignments[name] = { platoon, rank, linkedName: linkedName || name };
 
   // Patch the in-memory soldier
   if (soldiers[name]) {
-    soldiers[name].platoon  = platoon;
-    soldiers[name].rank     = rank;
-    soldiers[name].rankVal  = RANK_ORDER[rank] || 0;
-    if (displayName !== name) soldiers[name].name = displayName;
+    soldiers[name].platoon = platoon;
+    soldiers[name].rank    = rank;
+    soldiers[name].rankVal = RANK_ORDER[rank] || 0;
+    // Pull last/first from the linked troop entry if one was selected
+    if (linkedName && troopMap && troopMap[linkedName]) {
+      soldiers[name].last  = troopMap[linkedName].last  || soldiers[name].last;
+      soldiers[name].first = troopMap[linkedName].first || soldiers[name].first;
+    }
   }
 
   // Remove from notInTroop list
@@ -438,29 +464,11 @@ function clearAssignment(name) {
   const asgn = sessionAssignments[name];
   if (!asgn) return;
   delete sessionAssignments[name];
-
-  // Restore soldier to UNKNOWN platoon
-  const displayName = asgn.displayName || name;
-  if (soldiers[displayName]) {
-    soldiers[displayName].platoon = 'UNKNOWN';
-    soldiers[displayName].rank    = '';
+  if (soldiers[name]) {
+    soldiers[name].platoon = 'UNKNOWN';
+    soldiers[name].rank    = '';
   }
   if (!matchReport.notInTroop.includes(name)) matchReport.notInTroop.push(name);
-
-  updateUnmatchedBadge();
-  renderAlerts();
-}
-
-function saveStatus(name, safeId) {
-  const status = document.getElementById('stat_'+safeId).value;
-  if (!status) { alert('Please select a status.'); return; }
-  sessionStatuses[name] = { status };
-  updateUnmatchedBadge();
-  renderAlerts();
-}
-
-function clearStatus(name) {
-  delete sessionStatuses[name];
   updateUnmatchedBadge();
   renderAlerts();
 }
@@ -479,36 +487,24 @@ function generateReports() {
 
   setTimeout(() => {
     try {
-      // Apply session assignments to soldiers before generating
+      // Re-apply all session assignments
       for (const [name, asgn] of Object.entries(sessionAssignments)) {
-        const key = asgn.displayName || name;
-        if (soldiers[key]) {
-          soldiers[key].platoon = asgn.platoon;
-          soldiers[key].rank    = asgn.rank;
-          soldiers[key].rankVal = RANK_ORDER[asgn.rank] || 0;
+        if (soldiers[name]) {
+          soldiers[name].platoon = asgn.platoon;
+          soldiers[name].rank    = asgn.rank;
+          soldiers[name].rankVal = RANK_ORDER[asgn.rank] || 0;
         }
       }
 
-      // Build filtered matchReport excluding marked-out soldiers
-      const markedNames = new Set(Object.keys(sessionStatuses));
-      const filteredMatchReport = {
-        ...matchReport,
-        notInGCSS: matchReport.notInGCSS.filter(s => !markedNames.has(s.name)),
-      };
-
       const dateStr = reportDateStr();
-      lastExcelBlob = buildExcelBlob(soldiers, filteredMatchReport, dateStr);
-      lastPdfBlob   = buildPDFBlob(soldiers, filteredMatchReport, dateStr);
+      lastExcelBlob = buildExcelBlob(soldiers, matchReport, dateStr);
+      lastPdfBlob   = buildPDFBlob(soldiers, matchReport, dateStr);
 
-      // Show session correction summary in report if any were made
       const assignCount = Object.keys(sessionAssignments).length;
-      const markCount   = Object.keys(sessionStatuses).length;
-      if (assignCount || markCount) {
-        const note = document.getElementById('dl-panel');
-        note.querySelector('.success').textContent =
-          `✓ REPORTS GENERATED  ${assignCount ? '// '+assignCount+' SOLDIER'+(assignCount>1?'S':'')+' ASSIGNED' : ''}`
-          + `${markCount ? '  // '+markCount+' MARKED' : ''}`;
-      }
+      document.getElementById('dl-panel').querySelector('.success').textContent =
+        assignCount
+          ? `✓ REPORTS GENERATED  // ${assignCount} SOLDIER${assignCount>1?'S':''} ASSIGNED THIS SESSION`
+          : '✓ REPORTS GENERATED';
 
       document.getElementById('dl-panel').classList.remove('hidden');
     } catch(e) { showErr('err-gen', 'Generation error: ' + e.message); }
@@ -522,31 +518,31 @@ function dlPDF()   { triggerDownload(lastPdfBlob,   `DT_Report_${dateStamp()}.pd
 
 // ── Excel Builder ──────────────────────────────────────────────────
 function buildExcelBlob(soldiers, matchReport, dateStr) {
-  const wb = XLSX.utils.book_new();
+  const wb      = XLSX.utils.book_new();
   const platoons = ['HQ','1ST','2ND','SUPPORT'];
   const sorted   = sortSoldiers(soldiers);
 
-  function makeSheet(title, soldiers_list) {
+  function makeSheet(title, list) {
     const aoa = [[title,'','','','','','',''],
                  ['PLATOON','RANK','LAST NAME','FIRST NAME','VEHICLES LICENSED','# VEH','FLAGS / ALERTS','STATUS']];
     let curPlt = null;
-    for (const s of soldiers_list) {
+    for (const s of list) {
       if (s.platoon !== curPlt) {
         aoa.push([`── ${s.platoon} PLATOON ──`,'','','','','','','']);
         curPlt = s.platoon;
       }
-      const flags = s.flags.join('  |  ');
-      const vehs  = s.vehicles.join(' | ');
+      const flags   = s.flags.join('  |  ');
+      const vehs    = s.vehicles.join(' | ');
       const anyExp  = s.flags.some(f => f.includes('EXPIRED'));
       const anyWarn = s.flags.some(f => f.includes('EXPIRES'));
       const anyRest = s.flags.some(f => f.includes('LEARNER') || f.includes('LIMITED'));
       const status  = anyExp ? 'EXPIRED' : anyWarn ? 'EXPIRING' : anyRest ? 'RESTRICTED' : s.vehicles.length ? 'CURRENT' : 'NO LICENSE';
       aoa.push([s.platoon, s.rank, s.last, s.first, vehs, s.vehicles.length, flags, status]);
     }
-    aoa.push([`TOTAL: ${soldiers_list.length} soldiers  |  Generated: ${dateStr}`,'','','','','','','']);
+    aoa.push([`TOTAL: ${list.length} soldiers  |  Generated: ${dateStr}`,'','','','','','','']);
     const ws = XLSX.utils.aoa_to_sheet(aoa);
     ws['!merges'] = [{s:{r:0,c:0},e:{r:0,c:7}},{s:{r:aoa.length-1,c:0},e:{r:aoa.length-1,c:3}}];
-    ws['!cols'] = [{wch:11},{wch:8},{wch:18},{wch:16},{wch:54},{wch:7},{wch:30},{wch:13}];
+    ws['!cols']   = [{wch:11},{wch:8},{wch:18},{wch:16},{wch:54},{wch:7},{wch:30},{wch:13}];
     return ws;
   }
 
@@ -568,23 +564,22 @@ function buildExcelBlob(soldiers, matchReport, dateStr) {
   vsWs['!cols'] = [{wch:20},{wch:8},{wch:10},{wch:10},{wch:10},{wch:8}];
   XLSX.utils.book_append_sheet(wb, vsWs, 'VEHICLE SUMMARY');
 
-  // Corrections tab if any were made
+  // Corrections tab
   const assignEntries = Object.entries(sessionAssignments);
-  const markEntries   = Object.entries(sessionStatuses);
-  if (assignEntries.length || markEntries.length) {
+  if (assignEntries.length) {
     const corrAoa = [[`SESSION CORRECTIONS — ${dateStr}`,'',''],
-                     ['NAME','ACTION','DETAIL']];
-    for (const [name, asgn] of assignEntries)
-      corrAoa.push([name, 'ASSIGNED', `${asgn.platoon} / ${asgn.rank}${asgn.displayName !== name ? ' / renamed: '+asgn.displayName : ''}`]);
-    for (const [name, stat] of markEntries)
-      corrAoa.push([name, 'MARKED', stat.status]);
-    corrAoa.push(['','','NOTE: These are session-only corrections. Update Troop Info file to make permanent.']);
+                     ['GCSS NAME','ACTION','DETAIL']];
+    for (const [name, asgn] of assignEntries) {
+      const detail = `${asgn.platoon} / ${asgn.rank}${asgn.linkedName && asgn.linkedName !== name ? ' → linked to: ' + asgn.linkedName : ''}`;
+      corrAoa.push([name, 'ASSIGNED', detail]);
+    }
+    corrAoa.push(['','','NOTE: Session-only corrections. Update Troop Info file to make permanent.']);
     const corrWs = XLSX.utils.aoa_to_sheet(corrAoa);
-    corrWs['!cols'] = [{wch:28},{wch:12},{wch:40}];
+    corrWs['!cols'] = [{wch:28},{wch:12},{wch:50}];
     XLSX.utils.book_append_sheet(wb, corrWs, 'CORRECTIONS');
   }
 
-  const wbout = XLSX.write(wb, {bookType:'xlsx',type:'array'});
+  const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
   return new Blob([wbout], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
 }
 
@@ -592,12 +587,11 @@ function buildExcelBlob(soldiers, matchReport, dateStr) {
 function buildPDFBlob(soldiers, matchReport, dateStr) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation:'landscape', unit:'pt', format:'letter' });
-  const W = doc.internal.pageSize.getWidth();
-  const GREEN = [75,83,32], TAN = [200,181,96], DARK = [43,58,26], RED=[204,0,0], ORANGE=[255,102,0];
+  const W   = doc.internal.pageSize.getWidth();
+  const GREEN=[75,83,32], TAN=[200,181,96], DARK=[43,58,26], RED=[204,0,0], ORANGE=[255,102,0];
   let y = 40;
 
-  doc.setFillColor(...DARK);
-  doc.rect(40, y, W-80, 36, 'F');
+  doc.setFillColor(...DARK); doc.rect(40, y, W-80, 36, 'F');
   doc.setTextColor(255,255,255);
   doc.setFontSize(14); doc.setFont('helvetica','bold');
   doc.text('UNIT DRIVER TRAINING ROSTER REPORT', W/2, y+14, {align:'center'});
@@ -605,7 +599,7 @@ function buildPDFBlob(soldiers, matchReport, dateStr) {
   doc.text(dateStr, W/2, y+28, {align:'center'});
   y += 50;
 
-  const statLabels = ['TOTAL SOLDIERS','EXPIRED LICENSES','EXPIRING (90 DAYS)','RESTRICTED','UNRESOLVED'];
+  const statLabels = ['TOTAL SOLDIERS','EXPIRED LICENSES','EXPIRING (90 DAYS)','RESTRICTED','UNMATCHED'];
   const statVals   = [matchReport.totalGCSS, matchReport.expired.length,
                       matchReport.expiringSoon.length, matchReport.restricted.length,
                       getUnresolvedCount()];
@@ -630,7 +624,7 @@ function buildPDFBlob(soldiers, matchReport, dateStr) {
     doc.autoTable({
       startY: y, margin:{left:40,right:40},
       head: [['NAME','RANK','PLATOON','VEHICLE','EXPIRED DATE']],
-      body: matchReport.expired.map(e => [e.name, e.rank, e.platoon, e.vehicle, e.endDate]),
+      body: matchReport.expired.map(e => [e.name,e.rank,e.platoon,e.vehicle,e.endDate]),
       headStyles:{fillColor:RED,textColor:255,fontSize:7,fontStyle:'bold'},
       bodyStyles:{fontSize:7}, alternateRowStyles:{fillColor:[255,238,238]},
     });
@@ -651,30 +645,27 @@ function buildPDFBlob(soldiers, matchReport, dateStr) {
     y = doc.lastAutoTable.finalY + 10;
   }
 
-  if (matchReport.notInTroop.length) {
+  if (matchReport.notInTroop && matchReport.notInTroop.length) {
     doc.setTextColor(...DARK); doc.setFontSize(10); doc.setFont('helvetica','bold');
     doc.text(`IN GCSS, NOT IN TROOP INFO (${matchReport.notInTroop.length})`, 40, y); y += 8;
     doc.autoTable({
       startY: y, margin:{left:40,right:40},
       head: [['NAME']],
-      body: matchReport.notInTroop.sort().map(n => [n]),
+      body: [...matchReport.notInTroop].sort().map(n => [n]),
       headStyles:{fillColor:TAN,textColor:DARK,fontSize:7,fontStyle:'bold'},
       bodyStyles:{fontSize:7},
     });
     y = doc.lastAutoTable.finalY + 10;
   }
 
-  // Session corrections note
   const assignCount = Object.keys(sessionAssignments).length;
-  const markCount   = Object.keys(sessionStatuses).length;
-  if (assignCount || markCount) {
+  if (assignCount) {
     doc.setTextColor(...DARK); doc.setFontSize(8); doc.setFont('helvetica','italic');
-    doc.text(`* Session corrections applied: ${assignCount} assigned, ${markCount} marked. Update Troop Info file to make permanent.`, 40, y);
+    doc.text(`* Session corrections applied: ${assignCount} soldier${assignCount>1?'s':''} assigned. Update Troop Info file to make permanent.`, 40, y);
     y += 14;
   }
 
-  doc.addPage();
-  y = 40;
+  doc.addPage(); y = 40;
   doc.setTextColor(...GREEN); doc.setFontSize(12); doc.setFont('helvetica','bold');
   doc.text('FULL UNIT ROSTER BY PLATOON', 40, y); y += 16;
 
