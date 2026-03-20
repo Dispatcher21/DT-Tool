@@ -4,20 +4,170 @@
 // ═══════════════════════════════════════════════════════════════════
 
 const EQUIP_MAP = {
-  'AT422T':'CRANE','D7RII WIN':'DOZER','JD240D LCR':'HYEX',
-  'M1075A1':'PLS','M1076':'PLS TRAILER',
-  'M1078A1':'LMTV','M1078A1P2WOW':'LMTV','M1078A1WW':'LMTV','M1085A1P2WOW':'LMTV',
-  'M1097':'HMMV','M1097A2':'HMMV','M1152A1':'HMMV','M1165A1':'HMMV',
-  'M15':'BAP','M1975':'DSB','M1977A4':'CBT',
-  'M1977A2WW':'PLS','M1977A2R1WOW':'PLS','M1977A2R1WW':'PLS','M1977A2WOW':'PLS','M1977A2RWW':'PLS',
-  'M400W':'SKD STR','M7FRS':'FRS','M870':'40 FT LOW BED',
-  'M978A2':'FUELER',
-  'M983A4LET':'LET','M984A4WOW':'WRECKER','M984A4WO/W':'WRECKER',
-  'M985A4WOW':'HEMTT CARGO','MK2':'BEB','M30':'BEB',
-  'REPW R6BT':'BEB','REPWR6BT':'BRIDGE PIECE',
-  'TPI HMEE-I':'I HMEE','TP I HMEE-I':'I HMEE',
-  'ACVCII1202':'GSA','ACVCIJ1101':'GSA','ACVCIB0201':'GSA',
-  'M1101':'HMMV/LMTV TRAILER',
+
+  // ── HMMWV / HMMWV Variants ────────────────────────────────────────
+  // Cargo / Troop Carriers
+  'M998':'HMMWV (Cargo/Troop)',
+  'M998A1':'HMMWV (Cargo/Troop)',
+  'M998A2':'HMMWV (Cargo/Troop)',
+  'M1038':'HMMWV (Cargo/Troop w/ Winch)',
+  'M1038A1':'HMMWV (Cargo/Troop w/ Winch)',
+  'M1097':'HMMWV (Heavy Cargo)',
+  'M1097A1':'HMMWV (Heavy Cargo)',
+  'M1097A2':'HMMWV (Heavy Cargo)',
+  'M1123':'HMMWV (Heavy Cargo/Troop)',
+  // Utility / ECV
+  'M1113':'HMMWV (ECV Shelter Carrier)',
+  'M1114':'HMMWV (Up-Armored)',
+  'M1116':'HMMWV (Up-Armored/USAF)',
+  'M1151':'HMMWV (Armament Carrier)',
+  'M1151A1':'HMMWV (Armament Carrier)',
+  'M1152':'HMMWV (Cargo/Troop ECV)',
+  'M1152A1':'HMMWV (Cargo/Troop ECV)',
+  'M1165':'HMMWV (Special Ops/GSSV)',
+  'M1165A1':'HMMWV (Special Ops)',
+  'M1167':'HMMWV (TOW Carrier)',
+  // Armament Carriers
+  'M1025':'HMMWV (Armament Carrier)',
+  'M1025A1':'HMMWV (Armament Carrier)',
+  'M1025A2':'HMMWV (Armament Carrier)',
+  'M1026':'HMMWV (Armament Carrier w/ Winch)',
+  'M1026A1':'HMMWV (Armament Carrier w/ Winch)',
+  'M1043':'HMMWV (Armament Carrier, Armor)',
+  'M1043A1':'HMMWV (Armament Carrier, Armor)',
+  'M1043A2':'HMMWV (Armament Carrier, Armor)',
+  'M1044':'HMMWV (Armament Carrier, Armor w/ Winch)',
+  'M1044A1':'HMMWV (Armament Carrier, Armor w/ Winch)',
+  // TOW Carriers
+  'M966':'HMMWV (TOW Carrier)',
+  'M966A1':'HMMWV (TOW Carrier)',
+  'M1045':'HMMWV (TOW Carrier, Armor)',
+  'M1045A1':'HMMWV (TOW Carrier, Armor)',
+  'M1045A2':'HMMWV (TOW Carrier, Armor)',
+  'M1046':'HMMWV (TOW Carrier, Armor w/ Winch)',
+  'M1046A1':'HMMWV (TOW Carrier, Armor w/ Winch)',
+  // Ambulance
+  'M997':'HMMWV (Ambulance)',
+  'M997A1':'HMMWV (Ambulance)',
+  'M997A2':'HMMWV (Ambulance)',
+  'M997A3':'HMMWV (Ambulance)',
+  // Shelter Carrier / S250
+  'M1035':'HMMWV (Soft Top Ambulance)',
+  'M1035A1':'HMMWV (Soft Top Ambulance)',
+  'M1035A2':'HMMWV (Soft Top Ambulance)',
+  // Trailers
+  'M1101':'HMMWV Trailer (Light)',
+  'M1102':'HMMWV Trailer (Heavy)',
+
+  // ── LMTV (2.5-ton 4x4) ───────────────────────────────────────────
+  'M1078':'LMTV (Cargo)',
+  'M1078A1':'LMTV (Cargo)',
+  'M1078A1R':'LMTV (Cargo)',
+  'M1078A1P2':'LMTV (Cargo)',
+  'M1078A1P2WOW':'LMTV (Cargo)',
+  'M1078A1WW':'LMTV (Cargo)',
+  'M1079':'LMTV (Van)',
+  'M1079A1':'LMTV (Van)',
+  'M1079A1R':'LMTV (Van)',
+  'M1080':'LMTV (Chassis)',
+  'M1081':'LMTV (Cargo, Airdrop)',
+  'M1082':'LMTV Trailer',
+
+  // ── MTV (5-ton 6x6) ───────────────────────────────────────────────
+  'M1083':'MTV (Cargo)',
+  'M1083A1':'MTV (Cargo)',
+  'M1083A1P2':'MTV (Cargo)',
+  'M1084':'MTV (Cargo w/ Crane)',
+  'M1084A1':'MTV (Cargo w/ Crane)',
+  'M1084A1P2':'MTV (Cargo w/ Crane)',
+  'M1085':'MTV (LWB Cargo)',
+  'M1085A1':'MTV (LWB Cargo)',
+  'M1085A1P2':'MTV (LWB Cargo)',
+  'M1085A1P2WOW':'MTV (LWB Cargo)',
+  'M1086':'MTV (LWB Cargo w/ Crane)',
+  'M1086A1':'MTV (LWB Cargo w/ Crane)',
+  'M1087':'MTV (Expansible Van)',
+  'M1087A1':'MTV (Expansible Van)',
+  'M1088':'MTV (Tractor)',
+  'M1088A1':'MTV (Tractor)',
+  'M1089':'MTV (Wrecker)',
+  'M1089A1':'MTV (Wrecker)',
+  'M1090':'MTV (Dump)',
+  'M1092':'MTV (Chassis)',
+  'M1093':'MTV (Cargo, Airdrop)',
+  'M1094':'MTV (Dump, Airdrop)',
+  'M1095':'MTV Trailer',
+  'M1096':'MTV (LWB Chassis)',
+  'M1148':'MTV (Load Handling System)',
+  'M1157':'MTV (10-Ton Dump)',
+
+  // ── HEMTT (Heavy Expanded Mobility Tactical Truck) ────────────────
+  'M977':'HEMTT (Cargo)',
+  'M977A2':'HEMTT (Cargo)',
+  'M977A4':'HEMTT (Cargo)',
+  'M978':'HEMTT (Fueler)',
+  'M978A2':'HEMTT (Fueler)',
+  'M978A2 ':'HEMTT (Fueler)',
+  'M978A4':'HEMTT (Fueler)',
+  'M983':'HEMTT (Tractor)',
+  'M983A2':'HEMTT (Tractor)',
+  'M983A4LET':'LET (Transporter)',
+  'M984':'HEMTT (Wrecker)',
+  'M984A2':'HEMTT (Wrecker)',
+  'M984A4WOW':'HEMTT (Wrecker)',
+  'M984A4WO/W':'HEMTT (Wrecker)',
+  'M985':'HEMTT (Cargo w/ Crane)',
+  'M985A2':'HEMTT (Cargo w/ Crane)',
+  'M985A4WOW':'HEMTT (Cargo w/ Crane)',
+
+  // ── PLS (Palletized Load System) ──────────────────────────────────
+  'M1074':'PLS (Truck)',
+  'M1074A1':'PLS (Truck)',
+  'M1075':'PLS (Truck)',
+  'M1075A1':'PLS (Truck)',
+  'M1076':'PLS Trailer',
+  'M1076A1':'PLS Trailer',
+  'M1977A2WW':'PLS (Truck)',
+  'M1977A2R1WOW':'PLS (Truck)',
+  'M1977A2R1WW':'PLS (Truck)',
+  'M1977A2WOW':'PLS (Truck)',
+  'M1977A2RWW':'PLS (Truck)',
+
+  // ── CBT (Common Bridge Transporter) ──────────────────────────────
+  'M1977A4':'CBT (Bridge Transporter)',
+
+  // ── DSB ───────────────────────────────────────────────────────────
+  'M1975':'DSB (Dry Support Bridge)',
+
+  // ── BAP (Bridge Adapter Pallet) ───────────────────────────────────
+  'M15':'BAP',
+  'M15A2':'BAP',
+
+  // ── Engineer / Construction ───────────────────────────────────────
+  'AT422T':'CRANE',
+  'D7RII WIN':'DOZER',
+  'D7RII':'DOZER',
+  'JD240D LCR':'EXCAVATOR (HYEX)',
+  'TPI HMEE-I':'HMEE (Engineer Excavator)',
+  'TP I HMEE-I':'HMEE (Engineer Excavator)',
+  'M9':'ACE (Armored Combat Earthmover)',
+
+  // ── BEB / Bridge ─────────────────────────────────────────────────
+  'MK2':'BEB (Bridge Erection Boat)',
+  'M30':'BEB (Bridge Erection Boat)',
+  'REPW R6BT':'BEB (Bridge Erection Boat)',
+  'REPWR6BT':'BRIDGE PIECE',
+  'M400W':'SKD STR (Straddle)',
+
+  // ── Other Specialty ───────────────────────────────────────────────
+  'M7FRS':'FRS',
+  'M870':'LOWBED (40ft)',
+  'M870A1':'LOWBED (40ft)',
+
+  // ── GSA / Administrative Vehicles ────────────────────────────────
+  'ACVCII1202':'GSA (Admin Vehicle)',
+  'ACVCIJ1101':'GSA (Admin Vehicle)',
+  'ACVCIB0201':'GSA (Admin Vehicle)',
 };
 
 const RANK_ORDER = {
