@@ -588,7 +588,8 @@ async function generate() {
   const examiner = document.getElementById('examiner').value.trim().toUpperCase();
   const vehicle  = document.getElementById('vehicle').value.trim().toUpperCase();
   const route    = document.getElementById('route').value.trim().toUpperCase();
-  const dateVal  = document.getElementById('sess-date').value;
+  const dateVal  = document.getElementById('sess-date').value ||
+                   new Date().toISOString().split('T')[0];
   const doWritten = document.getElementById('chk-written').checked;
   const doRoad    = document.getElementById('chk-road').checked;
 
@@ -596,7 +597,6 @@ async function generate() {
 
   if (!examiner) { showErr('Enter examiner name in Step 2.'); return; }
   if (!vehicle)  { showErr('Enter vehicle / equipment in Step 2.'); return; }
-  if (!dateVal)  { showErr('Select a date in Step 2.'); return; }
 
   // Build sorted soldier list
   // Roster soldiers in platoon/rank order, then manual additions at end
@@ -809,12 +809,12 @@ async function buildRoadTestPDF(soldiers, examiner, vehicle, route, dateStr, tem
       const page   = pdfDoc.getPages()[0];
       const h      = page.getSize().height;
       const stamp  = (text, x, y, size=9) =>
-        page.drawText(text, {x, y:h-y, size, font, color:rgb(0.18,0.31,0.08)});
-      stamp(name,     140, 108, 9);
-      stamp(examiner, 140, 120, 9);
-      stamp(vehicle,  390, 108, 9);
-      stamp(route,    390, 120, 9);
-      stamp(dateStr,  390, 132, 9);
+        page.drawText(text, {x, y:h-y, size, font, color:rgb(0, 0, 0)});
+      stamp(name,     180,  80, 9);
+      stamp(examiner, 430,  80, 9);
+      stamp(dateStr,  470,  50, 9);
+      stamp(vehicle,  350, 103, 9);
+      stamp(route,    350, 114, 9);
       const [cp] = await outDoc.copyPages(pdfDoc, [0]);
       outDoc.addPage(cp);
     }
