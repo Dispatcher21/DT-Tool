@@ -813,8 +813,8 @@ async function buildRoadTestPDF(soldiers, examiner, vehicle, route, dateStr, tem
       stamp(name,     180,  80, 9);
       stamp(examiner, 430,  80, 9);
       stamp(dateStr,  470,  50, 9);
-      stamp(vehicle,  350, 103, 9);
-      stamp(route,    350, 114, 9);
+      stamp(route,    350, 103, 9);
+      stamp(vehicle,  330, 663, 9);
       const [cp] = await outDoc.copyPages(pdfDoc, [0]);
       outDoc.addPage(cp);
     }
