@@ -457,12 +457,13 @@ function buildPDFBlob(soldiers, label, dateStr, vehFilter) {
       const anyExp=s.flags.some(f=>f.includes('EXPIRED'));
       const anyWarn=s.flags.some(f=>f.includes('EXPIRES'));
       const anyRest=s.flags.some(f=>f.includes('LEARNER')||f.includes('LIMITED'));
-      return [s.rank,`${s.last}, ${s.first}`,s.platoon,s.vehicles.join(' | '),
+      return [s.rank,`${s.last}, ${s.first}`,s.platoon,s.vehicles.join('\n'),
               anyExp?'EXPIRED':anyWarn?'EXPIRING':anyRest?'RESTRICTED':s.vehicles.length?'CURRENT':'NO LIC'];
     }),
     headStyles:{fillColor:GREEN,textColor:255,fontSize:7,fontStyle:'bold'},
-    bodyStyles:{fontSize:7}, alternateRowStyles:{fillColor:[242,245,238]},
-    columnStyles:{0:{cellWidth:38},1:{cellWidth:120},2:{cellWidth:60},3:{cellWidth:320},4:{cellWidth:60}},
+    bodyStyles:{fontSize:7,cellPadding:{top:3,right:4,bottom:3,left:4},valign:'middle'},
+    alternateRowStyles:{fillColor:[242,245,238]},
+    columnStyles:{0:{cellWidth:38},1:{cellWidth:110},2:{cellWidth:52},3:{cellWidth:330},4:{cellWidth:60}},
   });
 
   return new Blob([doc.output('arraybuffer')],{type:'application/pdf'});

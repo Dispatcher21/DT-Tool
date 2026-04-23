@@ -681,14 +681,15 @@ function buildPDFBlob(soldiers, matchReport, dateStr) {
       const anyWarn = s.flags.some(f=>f.includes('EXPIRES'));
       const anyRest = s.flags.some(f=>f.includes('LEARNER')||f.includes('LIMITED'));
       const status  = anyExp?'EXPIRED':anyWarn?'EXPIRING':anyRest?'RESTRICTED':s.vehicles.length?'CURRENT':'NO LIC';
-      return [s.rank, `${s.last}, ${s.first}`, s.vehicles.join(' | '), s.vehicles.length, status];
+      return [s.rank, `${s.last}, ${s.first}`, s.vehicles.join('\n'), s.vehicles.length, status];
     });
     doc.autoTable({
       startY: y, margin:{left:40,right:40},
       head: [['RANK','NAME','VEHICLES LICENSED','#','STATUS']],
       body: rows,
       headStyles:{fillColor:GREEN,textColor:255,fontSize:7,fontStyle:'bold'},
-      bodyStyles:{fontSize:7}, alternateRowStyles:{fillColor:[242,245,238]},
+      bodyStyles:{fontSize:7,cellPadding:{top:3,right:4,bottom:3,left:4},valign:'middle'},
+      alternateRowStyles:{fillColor:[242,245,238]},
       columnStyles:{0:{cellWidth:38},1:{cellWidth:110},2:{cellWidth:330},3:{cellWidth:22},4:{cellWidth:60}},
     });
     y = doc.lastAutoTable.finalY + 12;
