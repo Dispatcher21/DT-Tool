@@ -807,7 +807,8 @@ function buildAnswerSheetsPDF(soldiers, examiner, vehicle, dateStr, key) {
     doc.setFontSize(8); doc.setFont('helvetica','bold');
     doc.text(`SCORE: _____ / ${nQ}`, 40, y);
     doc.text('PASS  /  FAIL  (circle)', 200, y);
-    doc.text('EXAMINER SIG: _______________________', W-240, y);
+    doc.setFont('helvetica','normal');
+    doc.text(`EXAMINER: ${examiner || '___________________'}   DATE: ${dateStr}`, W-240, y);
   });
 
   return new Blob([doc.output('arraybuffer')], {type:'application/pdf'});
