@@ -204,6 +204,7 @@
   </div>
 
 </main>
+<script src="js/libs/exceljs.min.js"></script>
 <script src="js/core.js"></script>
 <script>
 startClock('clock');
@@ -478,7 +479,7 @@ function updateUnmatchedBadge() {
 }
 
 // ── Generate ───────────────────────────────────────────────────────
-function generateReports() {
+async function generateReports() {
   showErr('err-gen', null);
   document.getElementById('dl-panel').classList.add('hidden');
   const spin = document.getElementById('spin-gen');
@@ -497,7 +498,7 @@ function generateReports() {
       }
 
       const dateStr = reportDateStr();
-      lastExcelBlob = buildExcelBlob(soldiers, matchReport, dateStr);
+      lastExcelBlob = await buildExcelBlob(soldiers, matchReport, dateStr);
       lastPdfBlob   = buildPDFBlob(soldiers, matchReport, dateStr);
 
       const assignCount = Object.keys(sessionAssignments).length;
@@ -518,69 +519,8 @@ function dlPDF()   { triggerDownload(lastPdfBlob,   `DT_Report_${dateStamp()}.pd
 
 // ── Excel Builder ──────────────────────────────────────────────────
 function buildExcelBlob(soldiers, matchReport, dateStr) {
-  const wb      = XLSX.utils.book_new();
-  const platoons = ['HQ','1ST','2ND','SUPPORT'];
-  const sorted   = sortSoldiers(soldiers);
-
-  function makeSheet(title, list) {
-    const aoa = [[title,'','','','','','',''],
-                 ['PLATOON','RANK','LAST NAME','FIRST NAME','VEHICLES LICENSED','# VEH','FLAGS / ALERTS','STATUS']];
-    let curPlt = null;
-    for (const s of list) {
-      if (s.platoon !== curPlt) {
-        aoa.push([`── ${s.platoon} PLATOON ──`,'','','','','','','']);
-        curPlt = s.platoon;
-      }
-      const flags   = s.flags.join('  |  ');
-      const vehs    = s.vehicles.join(' | ');
-      const anyExp  = s.flags.some(f => f.includes('EXPIRED'));
-      const anyWarn = s.flags.some(f => f.includes('EXPIRES'));
-      const anyRest = s.flags.some(f => f.includes('LEARNER') || f.includes('LIMITED'));
-      const status  = anyExp ? 'EXPIRED' : anyWarn ? 'EXPIRING' : anyRest ? 'RESTRICTED' : s.vehicles.length ? 'CURRENT' : 'NO LICENSE';
-      aoa.push([s.platoon, s.rank, s.last, s.first, vehs, s.vehicles.length, flags, status]);
-    }
-    aoa.push([`TOTAL: ${list.length} soldiers  |  Generated: ${dateStr}`,'','','','','','','']);
-    const ws = XLSX.utils.aoa_to_sheet(aoa);
-    ws['!merges'] = [{s:{r:0,c:0},e:{r:0,c:7}},{s:{r:aoa.length-1,c:0},e:{r:aoa.length-1,c:3}}];
-    ws['!cols']   = [{wch:11},{wch:8},{wch:18},{wch:16},{wch:54},{wch:7},{wch:30},{wch:13}];
-    return ws;
-  }
-
-  XLSX.utils.book_append_sheet(wb, makeSheet(`UNIT DRIVER TRAINING MASTER ROSTER — ${dateStr}`, sorted), 'MASTER ROSTER');
-  for (const plt of platoons) {
-    const sub = sorted.filter(s => s.platoon === plt);
-    if (sub.length) XLSX.utils.book_append_sheet(wb, makeSheet(`${plt} PLATOON — ${dateStr}`, sub), `${plt} PLT`);
-  }
-
-  const allVehs = [...new Set(sorted.flatMap(s => s.vehicles))].sort();
-  const vsAoa = [[`VEHICLE LICENSE SUMMARY BY PLATOON — ${dateStr}`,'','','','',''],
-                 ['VEHICLE TYPE','HQ','1ST PLT','2ND PLT','SUPPORT','TOTAL']];
-  for (const v of allVehs) {
-    const row = [v, ...platoons.map(p => sorted.filter(s=>s.platoon===p&&s.vehicles.includes(v)).length)];
-    row.push(row.slice(1).reduce((a,b)=>a+b,0));
-    vsAoa.push(row);
-  }
-  const vsWs = XLSX.utils.aoa_to_sheet(vsAoa);
-  vsWs['!cols'] = [{wch:20},{wch:8},{wch:10},{wch:10},{wch:10},{wch:8}];
-  XLSX.utils.book_append_sheet(wb, vsWs, 'VEHICLE SUMMARY');
-
-  // Corrections tab
-  const assignEntries = Object.entries(sessionAssignments);
-  if (assignEntries.length) {
-    const corrAoa = [[`SESSION CORRECTIONS — ${dateStr}`,'',''],
-                     ['GCSS NAME','ACTION','DETAIL']];
-    for (const [name, asgn] of assignEntries) {
-      const detail = `${asgn.platoon} / ${asgn.rank}${asgn.linkedName && asgn.linkedName !== name ? ' → linked to: ' + asgn.linkedName : ''}`;
-      corrAoa.push([name, 'ASSIGNED', detail]);
-    }
-    corrAoa.push(['','','NOTE: Session-only corrections. Update Troop Info file to make permanent.']);
-    const corrWs = XLSX.utils.aoa_to_sheet(corrAoa);
-    corrWs['!cols'] = [{wch:28},{wch:12},{wch:50}];
-    XLSX.utils.book_append_sheet(wb, corrWs, 'CORRECTIONS');
-  }
-
-  const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
-  return new Blob([wbout], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  // Async — returns a Promise<Blob>
+  return buildStyledExcelBlob_GCSS(soldiers, matchReport, dateStr, sessionAssignments);
 }
 
 // ── PDF Builder ────────────────────────────────────────────────────
@@ -696,6 +636,223 @@ function buildPDFBlob(soldiers, matchReport, dateStr) {
   }
 
   return new Blob([doc.output('arraybuffer')], {type:'application/pdf'});
+}
+
+// ── Shared Excel styling constants ────────────────────────────────
+const XL_GREEN  = 'FF4B5320';
+const XL_TAN    = 'FFC8B560';
+const XL_WHITE  = 'FFFFFFFF';
+const XL_ALT    = 'FFF2F5EE';
+const XL_RED_BG = 'FFFFCCCC';
+const XL_ORG_BG = 'FFFFF0CC';
+
+function xlHeaderStyle(wb) {
+  return { font:{bold:true,size:10,color:{argb:XL_WHITE}}, fill:{type:'pattern',pattern:'solid',fgColor:{argb:XL_GREEN}},
+    alignment:{horizontal:'center',vertical:'middle',wrapText:true}, border:{bottom:{style:'thin'}} };
+}
+function xlSectionStyle() {
+  return { font:{bold:true,size:9,color:{argb:XL_WHITE}}, fill:{type:'pattern',pattern:'solid',fgColor:{argb:XL_TAN}},
+    alignment:{horizontal:'left',vertical:'middle'} };
+}
+function xlDataStyle(alt) {
+  return { font:{size:9}, fill:{type:'pattern',pattern:'solid',fgColor:{argb: alt ? XL_ALT : XL_WHITE}},
+    alignment:{horizontal:'left',vertical:'top',wrapText:true}, border:{bottom:{style:'hair',color:{argb:'FFCCCCCC'}}} };
+}
+function xlStatusStyle(status, alt) {
+  const base = xlDataStyle(alt);
+  base.font = {bold:true, size:9};
+  if (status==='EXPIRED')    base.font.color = {argb:'FFCC2200'};
+  else if (status==='EXPIRING') base.font.color = {argb:'FFCC6600'};
+  else if (status==='RESTRICTED') base.font.color = {argb:'FFCC8800'};
+  else base.font.color = {argb:'FF5A8A30'};
+  return base;
+}
+function xlTitleStyle() {
+  return { font:{bold:true,size:12,color:{argb:XL_WHITE}}, fill:{type:'pattern',pattern:'solid',fgColor:{argb:'FF2B3A1A'}},
+    alignment:{horizontal:'center',vertical:'middle'} };
+}
+function xlFooterStyle() {
+  return { font:{italic:true,size:8,color:{argb:'FF666666'}}, alignment:{horizontal:'left'} };
+}
+
+function applyToRow(row, styleObj) {
+  row.eachCell({includeEmpty:true}, cell => Object.assign(cell, {style: styleObj}));
+}
+
+async function buildStyledExcelBlob_GCSS(soldiers, matchReport, dateStr, sessionAssignments) {
+  const ExcelJS = window.ExcelJS;
+  const wb      = new ExcelJS.Workbook();
+  wb.creator    = 'DT Helper';
+  wb.created    = new Date();
+  const platoons = ['HQ','1ST','2ND','SUPPORT'];
+  const sorted   = sortSoldiers(soldiers);
+
+  function makeRosterSheet(sheetName, title, list) {
+    const ws = wb.addWorksheet(sheetName);
+    ws.columns = [
+      {key:'plt',  width:11}, {key:'rank', width:8},  {key:'last', width:18},
+      {key:'first',width:16}, {key:'vehs', width:54},  {key:'nveh', width:7},
+      {key:'flags',width:30}, {key:'status',width:13},
+    ];
+
+    // Title row
+    ws.addRow([title]);
+    ws.mergeCells(1,1,1,8);
+    ws.getRow(1).height = 22;
+    ws.getRow(1).getCell(1).style = xlTitleStyle();
+
+    // Header row
+    const hdr = ws.addRow(['PLATOON','RANK','LAST NAME','FIRST NAME','VEHICLES LICENSED','# VEH','FLAGS / ALERTS','STATUS']);
+    hdr.height = 20;
+    hdr.eachCell(c => c.style = xlHeaderStyle());
+
+    let rowIdx = 3;
+    let curPlt = null;
+    let alt = false;
+
+    for (const s of list) {
+      if (s.platoon !== curPlt) {
+        const secRow = ws.addRow([`── ${s.platoon} PLATOON ──`,'','','','','','','']);
+        ws.mergeCells(rowIdx+1, 1, rowIdx+1, 8);
+        secRow.height = 16;
+        secRow.getCell(1).style = xlSectionStyle();
+        rowIdx++;
+        curPlt = s.platoon;
+        alt = false;
+      }
+      const anyExp  = s.flags.some(f=>f.includes('EXPIRED'));
+      const anyWarn = s.flags.some(f=>f.includes('EXPIRES'));
+      const anyRest = s.flags.some(f=>f.includes('LEARNER')||f.includes('LIMITED'));
+      const status  = anyExp?'EXPIRED':anyWarn?'EXPIRING':anyRest?'RESTRICTED':s.vehicles.length?'CURRENT':'NO LICENSE';
+      const vehs    = s.vehicles.join('\n');
+      const flags   = s.flags.join('\n') || '';
+
+      const dr = ws.addRow([s.platoon, s.rank, s.last, s.first, vehs, s.vehicles.length, flags, status]);
+      dr.eachCell((c, colNum) => {
+        c.style = colNum === 8 ? xlStatusStyle(status, alt) : xlDataStyle(alt);
+      });
+      // Center numeric column
+      dr.getCell(6).alignment = {horizontal:'center',vertical:'top'};
+      rowIdx++;
+      alt = !alt;
+    }
+
+    // Footer
+    const ft = ws.addRow([`TOTAL: ${list.length} soldiers  |  Generated: ${dateStr}`]);
+    ws.mergeCells(rowIdx+1, 1, rowIdx+1, 4);
+    ft.getCell(1).style = xlFooterStyle();
+  }
+
+  // Build sheets
+  makeRosterSheet('MASTER ROSTER', `UNIT DRIVER TRAINING MASTER ROSTER  —  ${dateStr}`, sorted);
+  for (const plt of platoons) {
+    const sub = sorted.filter(s => s.platoon === plt);
+    if (sub.length) makeRosterSheet(`${plt} PLT`, `${plt} PLATOON  —  ${dateStr}`, sub);
+  }
+
+  // Vehicle summary sheet
+  const vsWs = wb.addWorksheet('VEHICLE SUMMARY');
+  vsWs.columns = [{width:28},{width:9},{width:9},{width:9},{width:9},{width:9}];
+  const vsTitle = vsWs.addRow([`VEHICLE LICENSE SUMMARY BY PLATOON  —  ${dateStr}`]);
+  vsWs.mergeCells(1,1,1,6);
+  vsTitle.getCell(1).style = xlTitleStyle();
+  vsTitle.height = 20;
+  const vsHdr = vsWs.addRow(['VEHICLE TYPE','HQ','1ST PLT','2ND PLT','SUPPORT','TOTAL']);
+  vsHdr.eachCell(c => c.style = xlHeaderStyle());
+  const allVehs = [...new Set(sorted.flatMap(s=>s.vehicles))].sort();
+  allVehs.forEach((v, i) => {
+    const counts = platoons.map(p => sorted.filter(s=>s.platoon===p&&s.vehicles.includes(v)).length);
+    const total  = counts.reduce((a,b)=>a+b,0);
+    const dr = vsWs.addRow([v,...counts,total]);
+    const alt = i%2===0;
+    dr.eachCell(c => { c.style = xlDataStyle(alt); c.alignment = {horizontal:'center',vertical:'middle'}; });
+    dr.getCell(1).alignment = {horizontal:'left',vertical:'middle'};
+  });
+
+  // Corrections sheet
+  const assignEntries = Object.entries(sessionAssignments||{});
+  if (assignEntries.length) {
+    const cWs = wb.addWorksheet('CORRECTIONS');
+    cWs.columns = [{width:28},{width:12},{width:50}];
+    const cTitle = cWs.addRow([`SESSION CORRECTIONS  —  ${dateStr}`]);
+    cWs.mergeCells(1,1,1,3);
+    cTitle.getCell(1).style = xlTitleStyle();
+    const cHdr = cWs.addRow(['GCSS NAME','ACTION','DETAIL']);
+    cHdr.eachCell(c => c.style = xlHeaderStyle());
+    assignEntries.forEach(([name,asgn],i) => {
+      const detail = `${asgn.platoon} / ${asgn.rank}${asgn.linkedName&&asgn.linkedName!==name?' → linked to: '+asgn.linkedName:''}`;
+      const dr = cWs.addRow([name,'ASSIGNED',detail]);
+      dr.eachCell(c => c.style = xlDataStyle(i%2===0));
+    });
+    const noteRow = cWs.addRow(['','','NOTE: Session-only corrections. Update Troop Info file to make permanent.']);
+    noteRow.getCell(3).style = xlFooterStyle();
+  }
+
+  const buf = await wb.xlsx.writeBuffer();
+  return new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+
+async function buildStyledExcelBlob_OpFinder(soldiers, label, dateStr) {
+  const ExcelJS = window.ExcelJS;
+  const wb      = new ExcelJS.Workbook();
+  wb.creator    = 'DT Helper';
+  wb.created    = new Date();
+  const list    = sortSoldiers(soldiers);
+
+  const ws = wb.addWorksheet('FILTERED ROSTER');
+  ws.columns = [
+    {key:'plt',  width:11}, {key:'rank', width:8},  {key:'last', width:18},
+    {key:'first',width:16}, {key:'vehs', width:54},  {key:'nveh', width:7},
+    {key:'flags',width:30}, {key:'status',width:13},
+  ];
+
+  // Title
+  const titleRow = ws.addRow([`OPERATOR FINDER: ${label}  —  ${dateStr}`]);
+  ws.mergeCells(1,1,1,8);
+  titleRow.height = 22;
+  titleRow.getCell(1).style = xlTitleStyle();
+
+  // Header
+  const hdr = ws.addRow(['PLATOON','RANK','LAST NAME','FIRST NAME','VEHICLES LICENSED','# VEH','FLAGS / ALERTS','STATUS']);
+  hdr.height = 20;
+  hdr.eachCell(c => c.style = xlHeaderStyle());
+
+  let alt = false;
+  let curPlt = null;
+  let rowIdx = 3;
+
+  for (const s of list) {
+    if (s.platoon !== curPlt) {
+      const secRow = ws.addRow([`── ${s.platoon} PLATOON ──`,'','','','','','','']);
+      ws.mergeCells(rowIdx+1,1,rowIdx+1,8);
+      secRow.height = 16;
+      secRow.getCell(1).style = xlSectionStyle();
+      rowIdx++;
+      curPlt = s.platoon;
+      alt = false;
+    }
+    const anyExp  = s.flags.some(f=>f.includes('EXPIRED'));
+    const anyWarn = s.flags.some(f=>f.includes('EXPIRES'));
+    const anyRest = s.flags.some(f=>f.includes('LEARNER')||f.includes('LIMITED'));
+    const status  = anyExp?'EXPIRED':anyWarn?'EXPIRING':anyRest?'RESTRICTED':s.vehicles.length?'CURRENT':'NO LICENSE';
+    const vehs    = s.vehicles.join('\n');
+    const flags   = s.flags.join('\n') || '';
+
+    const dr = ws.addRow([s.platoon, s.rank, s.last, s.first, vehs, s.vehicles.length, flags, status]);
+    dr.eachCell((c, colNum) => {
+      c.style = colNum === 8 ? xlStatusStyle(status, alt) : xlDataStyle(alt);
+    });
+    dr.getCell(6).alignment = {horizontal:'center',vertical:'top'};
+    rowIdx++;
+    alt = !alt;
+  }
+
+  const ft = ws.addRow([`TOTAL: ${list.length}  |  FILTER: ${label}  |  Generated: ${dateStr}`]);
+  ws.mergeCells(rowIdx+1,1,rowIdx+1,8);
+  ft.getCell(1).style = xlFooterStyle();
+
+  const buf = await wb.xlsx.writeBuffer();
+  return new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
 }
 
 function showErr(id, msg) {
