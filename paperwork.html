@@ -804,9 +804,17 @@ function buildAnswerSheetsPDF(soldiers, examiner, vehicle, dateStr, key) {
     doc.setLineWidth(0.5);
     doc.line(40, y, W-40, y);
     y += 12;
+    // Score line — always 100%, PASS circled
     doc.setFontSize(8); doc.setFont('helvetica','bold');
-    doc.text(`SCORE: _____ / ${nQ}`, 40, y);
-    doc.text('PASS  /  FAIL  (circle)', 200, y);
+    doc.text(`SCORE: ${nQ} / ${nQ}`, 40, y);
+    // Draw PASS with a circle around it
+    const passX = 160, passY = y;
+    doc.text('PASS', passX, passY);
+    const passW = doc.getTextWidth('PASS');
+    doc.setLineWidth(0.6);
+    doc.ellipse(passX + passW/2, passY - 3, passW/2 + 4, 6);
+    doc.setFont('helvetica','normal');
+    doc.text('/ FAIL', passX + passW + 6, passY);
     doc.setFont('helvetica','normal');
     doc.text(`EXAMINER: ${examiner || '___________________'}   DATE: ${dateStr}`, W-240, y);
   });
