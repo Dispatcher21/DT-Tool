@@ -11,13 +11,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/bmp" href="assets/icon.png">
 <title>DRIVER'S TRAINING ADMIN HELPER</title>
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+
 <style>
   :root{
     --green:#4B5320;--green-lt:#6B7A32;--tan:#C8B560;--tan-lt:#DDD090;
     --dark:#1A1F0E;--darker:#0F1208;--fg:#E8E4D0;--fg-dim:#9A9680;
     --panel:#222810;--border:#3A4018;
-    --mono:'Share Tech Mono',monospace;--cond:'Barlow Condensed',sans-serif;--body:'Barlow',sans-serif;
+    --mono:'Courier New',Courier,monospace;--cond:Arial Narrow,Arial,sans-serif;--body:Arial,sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{background:var(--darker);color:var(--fg);font-family:var(--body);min-height:100vh;
@@ -76,15 +76,15 @@
 <div id="install-banner" style="display:none;background:#4B5320;border-bottom:2px solid #C8B560;
   padding:.65rem 1rem;display:none;align-items:center;justify-content:center;gap:.75rem;
   position:sticky;top:0;z-index:999;flex-wrap:wrap;">
-  <span style="font-family:'Share Tech Mono',monospace;font-size:.72rem;color:#E8E4D0;" id="install-msg"></span>
+  <span style="font-family:'Courier New',Courier,monospace;font-size:.72rem;color:#E8E4D0;" id="install-msg"></span>
   <button id="install-btn" style="background:#C8B560;border:none;color:#0F1208;
-    font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.85rem;
+    font-family:Arial Narrow,Arial,sans-serif;font-weight:700;font-size:.85rem;
     letter-spacing:.1em;text-transform:uppercase;padding:.3rem .9rem;border-radius:2px;cursor:pointer;">
     📲 ADD TO HOME SCREEN
   </button>
   <button onclick="document.getElementById('install-banner').style.display='none'"
     style="background:transparent;border:1px solid #C8B560;color:#C8B560;
-    font-family:'Share Tech Mono',monospace;font-size:.7rem;padding:2px 8px;border-radius:2px;cursor:pointer;">✕</button>
+    font-family:'Courier New',Courier,monospace;font-size:.7rem;padding:2px 8px;border-radius:2px;cursor:pointer;">✕</button>
 </div>
 
 <script>
