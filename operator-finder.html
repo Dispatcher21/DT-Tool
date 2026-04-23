@@ -12,7 +12,7 @@
 <link rel="icon" type="image/png" href="assets/icon.png">
 <title>Operator Finder // UNIT TOOLS</title>
 
-<script src="js/libs/xlsx.full.min.js"></script>
+<script src="js/libs/xlsx-js-style.min.js"></script>
 <script src="js/libs/jspdf.umd.min.js"></script>
 <script src="js/libs/jspdf.plugin.autotable.min.js"></script>
 <style>
@@ -223,7 +223,6 @@
   </div>
 
 </main>
-<script src="js/libs/exceljs.min.js"></script>
 <script src="js/core.js"></script>
 <script>
 startClock('clock');
@@ -346,7 +345,7 @@ function renderResults() {
   }).join('');
 }
 
-async function generateReport() {
+function generateReport() {
   const spin = document.getElementById('spin-gen');
   spin.style.display='flex';
   document.getElementById('btn-gen').disabled=true;
@@ -359,7 +358,7 @@ async function generateReport() {
     const parts = [plt,rank,veh].filter(Boolean);
     const label = parts.length ? parts.join('_') : 'ALL';
     const dateStr = reportDateStr();
-    lastExcel = await buildExcelBlob(filteredSoldiers, label, dateStr);
+    lastExcel = buildExcelBlob(filteredSoldiers, label, dateStr);
     lastPDF   = buildPDFBlob(filteredSoldiers, label, dateStr, veh);
     document.getElementById('dl-panel').classList.remove('hidden');
   } catch(e) {
@@ -381,196 +380,47 @@ function buildExcelBlob(soldiers, label, dateStr) {
   return buildStyledExcelBlob_OpFinder(soldiers, label, dateStr);
 }
 
-// ── Shared Excel styling constants ────────────────────────────────
-const XL_GREEN  = 'FF4B5320';
-const XL_TAN    = 'FFC8B560';
-const XL_WHITE  = 'FFFFFFFF';
-const XL_ALT    = 'FFF2F5EE';
-const XL_RED_BG = 'FFFFCCCC';
-const XL_ORG_BG = 'FFFFF0CC';
+// ── Styled Excel helpers (xlsx-js-style) ──────────────────────────
+const XLS_GREEN  = 'FF4B5320';
+const XLS_TAN    = 'FFC8B560';
+const XLS_DARK   = 'FF2B3A1A';
+const XLS_WHITE  = 'FFFFFFFF';
+const XLS_ALT    = 'FFF2F5EE';
 
-function xlHeaderStyle(wb) {
-  return { font:{bold:true,size:10,color:{argb:XL_WHITE}}, fill:{type:'pattern',pattern:'solid',fgColor:{argb:XL_GREEN}},
-    alignment:{horizontal:'center',vertical:'middle',wrapText:true}, border:{bottom:{style:'thin'}} };
+function xls_hdr()  { return { font:{bold:true,sz:10,color:{rgb:'FFFFFF'}}, fill:{fgColor:{rgb:'4B5320'},patternType:'solid'}, alignment:{horizontal:'center',vertical:'center',wrapText:true} }; }
+function xls_sec()  { return { font:{bold:true,sz:9,color:{rgb:'FFFFFF'}},  fill:{fgColor:{rgb:'C8B560'},patternType:'solid'}, alignment:{horizontal:'left',vertical:'center'} }; }
+function xls_title(){ return { font:{bold:true,sz:12,color:{rgb:'FFFFFF'}}, fill:{fgColor:{rgb:'2B3A1A'},patternType:'solid'}, alignment:{horizontal:'center',vertical:'center'} }; }
+function xls_data(alt){ return { font:{sz:9}, fill:{fgColor:{rgb: alt ? 'F2F5EE' : 'FFFFFF'},patternType:'solid'}, alignment:{horizontal:'left',vertical:'top',wrapText:true} }; }
+function xls_num(alt) { return { font:{sz:9}, fill:{fgColor:{rgb: alt ? 'F2F5EE' : 'FFFFFF'},patternType:'solid'}, alignment:{horizontal:'center',vertical:'top'} }; }
+function xls_status(status, alt) {
+  const colors = {EXPIRED:'CC2200',EXPIRING:'CC6600',RESTRICTED:'CC8800',CURRENT:'5A8A30','NO LICENSE':'888888'};
+  return { font:{bold:true,sz:9,color:{rgb: colors[status]||'000000'}}, fill:{fgColor:{rgb: alt?'F2F5EE':'FFFFFF'},patternType:'solid'}, alignment:{horizontal:'center',vertical:'top'} };
 }
-function xlSectionStyle() {
-  return { font:{bold:true,size:9,color:{argb:XL_WHITE}}, fill:{type:'pattern',pattern:'solid',fgColor:{argb:XL_TAN}},
-    alignment:{horizontal:'left',vertical:'middle'} };
-}
-function xlDataStyle(alt) {
-  return { font:{size:9}, fill:{type:'pattern',pattern:'solid',fgColor:{argb: alt ? XL_ALT : XL_WHITE}},
-    alignment:{horizontal:'left',vertical:'top',wrapText:true}, border:{bottom:{style:'hair',color:{argb:'FFCCCCCC'}}} };
-}
-function xlStatusStyle(status, alt) {
-  const base = xlDataStyle(alt);
-  base.font = {bold:true, size:9};
-  if (status==='EXPIRED')    base.font.color = {argb:'FFCC2200'};
-  else if (status==='EXPIRING') base.font.color = {argb:'FFCC6600'};
-  else if (status==='RESTRICTED') base.font.color = {argb:'FFCC8800'};
-  else base.font.color = {argb:'FF5A8A30'};
-  return base;
-}
-function xlTitleStyle() {
-  return { font:{bold:true,size:12,color:{argb:XL_WHITE}}, fill:{type:'pattern',pattern:'solid',fgColor:{argb:'FF2B3A1A'}},
-    alignment:{horizontal:'center',vertical:'middle'} };
-}
-function xlFooterStyle() {
-  return { font:{italic:true,size:8,color:{argb:'FF666666'}}, alignment:{horizontal:'left'} };
-}
+function xls_footer(){ return { font:{italic:true,sz:8,color:{rgb:'888888'}}, alignment:{horizontal:'left'} }; }
 
-function applyToRow(row, styleObj) {
-  row.eachCell({includeEmpty:true}, cell => Object.assign(cell, {style: styleObj}));
-}
+function xlsCell(v, style) { return { v, s: style, t: typeof v === 'number' ? 'n' : 's' }; }
 
-async function buildStyledExcelBlob_GCSS(soldiers, matchReport, dateStr, sessionAssignments) {
-  const ExcelJS = window.ExcelJS;
-  const wb      = new ExcelJS.Workbook();
-  wb.creator    = 'DT Helper';
-  wb.created    = new Date();
-  const platoons = ['HQ','1ST','2ND','SUPPORT'];
-  const sorted   = sortSoldiers(soldiers);
+function buildRosterAOA(list, title) {
+  const rows = [];
+  // Title row
+  rows.push([xlsCell(title, xls_title()),'','','','','','','']);
 
-  function makeRosterSheet(sheetName, title, list) {
-    const ws = wb.addWorksheet(sheetName);
-    ws.columns = [
-      {key:'plt',  width:11}, {key:'rank', width:8},  {key:'last', width:18},
-      {key:'first',width:16}, {key:'vehs', width:54},  {key:'nveh', width:7},
-      {key:'flags',width:30}, {key:'status',width:13},
-    ];
+  // Header row
+  rows.push([
+    xlsCell('PLATOON',          xls_hdr()),
+    xlsCell('RANK',             xls_hdr()),
+    xlsCell('LAST NAME',        xls_hdr()),
+    xlsCell('FIRST NAME',       xls_hdr()),
+    xlsCell('VEHICLES LICENSED',xls_hdr()),
+    xlsCell('# VEH',            xls_hdr()),
+    xlsCell('FLAGS / ALERTS',   xls_hdr()),
+    xlsCell('STATUS',           xls_hdr()),
+  ]);
 
-    // Title row
-    ws.addRow([title]);
-    ws.mergeCells(1,1,1,8);
-    ws.getRow(1).height = 22;
-    ws.getRow(1).getCell(1).style = xlTitleStyle();
-
-    // Header row
-    const hdr = ws.addRow(['PLATOON','RANK','LAST NAME','FIRST NAME','VEHICLES LICENSED','# VEH','FLAGS / ALERTS','STATUS']);
-    hdr.height = 20;
-    hdr.eachCell(c => c.style = xlHeaderStyle());
-
-    let rowIdx = 3;
-    let curPlt = null;
-    let alt = false;
-
-    for (const s of list) {
-      if (s.platoon !== curPlt) {
-        const secRow = ws.addRow([`── ${s.platoon} PLATOON ──`,'','','','','','','']);
-        ws.mergeCells(rowIdx+1, 1, rowIdx+1, 8);
-        secRow.height = 16;
-        secRow.getCell(1).style = xlSectionStyle();
-        rowIdx++;
-        curPlt = s.platoon;
-        alt = false;
-      }
-      const anyExp  = s.flags.some(f=>f.includes('EXPIRED'));
-      const anyWarn = s.flags.some(f=>f.includes('EXPIRES'));
-      const anyRest = s.flags.some(f=>f.includes('LEARNER')||f.includes('LIMITED'));
-      const status  = anyExp?'EXPIRED':anyWarn?'EXPIRING':anyRest?'RESTRICTED':s.vehicles.length?'CURRENT':'NO LICENSE';
-      const vehs    = s.vehicles.join('\n');
-      const flags   = s.flags.join('\n') || '';
-
-      const dr = ws.addRow([s.platoon, s.rank, s.last, s.first, vehs, s.vehicles.length, flags, status]);
-      dr.eachCell((c, colNum) => {
-        c.style = colNum === 8 ? xlStatusStyle(status, alt) : xlDataStyle(alt);
-      });
-      // Center numeric column
-      dr.getCell(6).alignment = {horizontal:'center',vertical:'top'};
-      rowIdx++;
-      alt = !alt;
-    }
-
-    // Footer
-    const ft = ws.addRow([`TOTAL: ${list.length} soldiers  |  Generated: ${dateStr}`]);
-    ws.mergeCells(rowIdx+1, 1, rowIdx+1, 4);
-    ft.getCell(1).style = xlFooterStyle();
-  }
-
-  // Build sheets
-  makeRosterSheet('MASTER ROSTER', `UNIT DRIVER TRAINING MASTER ROSTER  —  ${dateStr}`, sorted);
-  for (const plt of platoons) {
-    const sub = sorted.filter(s => s.platoon === plt);
-    if (sub.length) makeRosterSheet(`${plt} PLT`, `${plt} PLATOON  —  ${dateStr}`, sub);
-  }
-
-  // Vehicle summary sheet
-  const vsWs = wb.addWorksheet('VEHICLE SUMMARY');
-  vsWs.columns = [{width:28},{width:9},{width:9},{width:9},{width:9},{width:9}];
-  const vsTitle = vsWs.addRow([`VEHICLE LICENSE SUMMARY BY PLATOON  —  ${dateStr}`]);
-  vsWs.mergeCells(1,1,1,6);
-  vsTitle.getCell(1).style = xlTitleStyle();
-  vsTitle.height = 20;
-  const vsHdr = vsWs.addRow(['VEHICLE TYPE','HQ','1ST PLT','2ND PLT','SUPPORT','TOTAL']);
-  vsHdr.eachCell(c => c.style = xlHeaderStyle());
-  const allVehs = [...new Set(sorted.flatMap(s=>s.vehicles))].sort();
-  allVehs.forEach((v, i) => {
-    const counts = platoons.map(p => sorted.filter(s=>s.platoon===p&&s.vehicles.includes(v)).length);
-    const total  = counts.reduce((a,b)=>a+b,0);
-    const dr = vsWs.addRow([v,...counts,total]);
-    const alt = i%2===0;
-    dr.eachCell(c => { c.style = xlDataStyle(alt); c.alignment = {horizontal:'center',vertical:'middle'}; });
-    dr.getCell(1).alignment = {horizontal:'left',vertical:'middle'};
-  });
-
-  // Corrections sheet
-  const assignEntries = Object.entries(sessionAssignments||{});
-  if (assignEntries.length) {
-    const cWs = wb.addWorksheet('CORRECTIONS');
-    cWs.columns = [{width:28},{width:12},{width:50}];
-    const cTitle = cWs.addRow([`SESSION CORRECTIONS  —  ${dateStr}`]);
-    cWs.mergeCells(1,1,1,3);
-    cTitle.getCell(1).style = xlTitleStyle();
-    const cHdr = cWs.addRow(['GCSS NAME','ACTION','DETAIL']);
-    cHdr.eachCell(c => c.style = xlHeaderStyle());
-    assignEntries.forEach(([name,asgn],i) => {
-      const detail = `${asgn.platoon} / ${asgn.rank}${asgn.linkedName&&asgn.linkedName!==name?' → linked to: '+asgn.linkedName:''}`;
-      const dr = cWs.addRow([name,'ASSIGNED',detail]);
-      dr.eachCell(c => c.style = xlDataStyle(i%2===0));
-    });
-    const noteRow = cWs.addRow(['','','NOTE: Session-only corrections. Update Troop Info file to make permanent.']);
-    noteRow.getCell(3).style = xlFooterStyle();
-  }
-
-  const buf = await wb.xlsx.writeBuffer();
-  return new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-}
-
-async function buildStyledExcelBlob_OpFinder(soldiers, label, dateStr) {
-  const ExcelJS = window.ExcelJS;
-  const wb      = new ExcelJS.Workbook();
-  wb.creator    = 'DT Helper';
-  wb.created    = new Date();
-  const list    = sortSoldiers(soldiers);
-
-  const ws = wb.addWorksheet('FILTERED ROSTER');
-  ws.columns = [
-    {key:'plt',  width:11}, {key:'rank', width:8},  {key:'last', width:18},
-    {key:'first',width:16}, {key:'vehs', width:54},  {key:'nveh', width:7},
-    {key:'flags',width:30}, {key:'status',width:13},
-  ];
-
-  // Title
-  const titleRow = ws.addRow([`OPERATOR FINDER: ${label}  —  ${dateStr}`]);
-  ws.mergeCells(1,1,1,8);
-  titleRow.height = 22;
-  titleRow.getCell(1).style = xlTitleStyle();
-
-  // Header
-  const hdr = ws.addRow(['PLATOON','RANK','LAST NAME','FIRST NAME','VEHICLES LICENSED','# VEH','FLAGS / ALERTS','STATUS']);
-  hdr.height = 20;
-  hdr.eachCell(c => c.style = xlHeaderStyle());
-
-  let alt = false;
-  let curPlt = null;
-  let rowIdx = 3;
-
+  let curPlt = null, alt = false;
   for (const s of list) {
     if (s.platoon !== curPlt) {
-      const secRow = ws.addRow([`── ${s.platoon} PLATOON ──`,'','','','','','','']);
-      ws.mergeCells(rowIdx+1,1,rowIdx+1,8);
-      secRow.height = 16;
-      secRow.getCell(1).style = xlSectionStyle();
-      rowIdx++;
+      rows.push([xlsCell(`── ${s.platoon} PLATOON ──`, xls_sec()),'','','','','','','']);
       curPlt = s.platoon;
       alt = false;
     }
@@ -580,22 +430,114 @@ async function buildStyledExcelBlob_OpFinder(soldiers, label, dateStr) {
     const status  = anyExp?'EXPIRED':anyWarn?'EXPIRING':anyRest?'RESTRICTED':s.vehicles.length?'CURRENT':'NO LICENSE';
     const vehs    = s.vehicles.join('\n');
     const flags   = s.flags.join('\n') || '';
-
-    const dr = ws.addRow([s.platoon, s.rank, s.last, s.first, vehs, s.vehicles.length, flags, status]);
-    dr.eachCell((c, colNum) => {
-      c.style = colNum === 8 ? xlStatusStyle(status, alt) : xlDataStyle(alt);
-    });
-    dr.getCell(6).alignment = {horizontal:'center',vertical:'top'};
-    rowIdx++;
+    rows.push([
+      xlsCell(s.platoon,        xls_data(alt)),
+      xlsCell(s.rank,           xls_data(alt)),
+      xlsCell(s.last,           xls_data(alt)),
+      xlsCell(s.first,          xls_data(alt)),
+      xlsCell(vehs,             xls_data(alt)),
+      xlsCell(s.vehicles.length,xls_num(alt)),
+      xlsCell(flags,            xls_data(alt)),
+      xlsCell(status,           xls_status(status, alt)),
+    ]);
     alt = !alt;
   }
+  rows.push([xlsCell(`TOTAL: ${list.length} soldiers  |  Generated: ${title.split('—')[1]||''}`.trim(), xls_footer()),'','','','','','','']);
+  return rows;
+}
 
-  const ft = ws.addRow([`TOTAL: ${list.length}  |  FILTER: ${label}  |  Generated: ${dateStr}`]);
-  ws.mergeCells(rowIdx+1,1,rowIdx+1,8);
-  ft.getCell(1).style = xlFooterStyle();
+function makeStyledSheet(aoa, colWidths, merges) {
+  const ws = XLSX.utils.aoa_to_sheet(aoa, {cellStyles: true});
+  ws['!cols'] = colWidths.map(w => ({wch:w}));
+  if (merges) ws['!merges'] = merges;
+  // Apply row height for title and header
+  ws['!rows'] = [{hpt:22},{hpt:20}];
+  return ws;
+}
 
-  const buf = await wb.xlsx.writeBuffer();
-  return new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+function buildStyledExcelBlob_GCSS(soldiers, matchReport, dateStr, sessionAssignments) {
+  const wb       = XLSX.utils.book_new();
+  const platoons = ['HQ','1ST','2ND','SUPPORT'];
+  const sorted   = sortSoldiers(soldiers);
+  const cols     = [11,8,18,16,54,7,30,13];
+
+  function addRosterSheet(name, title, list) {
+    const aoa    = buildRosterAOA(list, title);
+    const merges = [{s:{r:0,c:0},e:{r:0,c:7}},{s:{r:aoa.length-1,c:0},e:{r:aoa.length-1,c:7}}];
+    // Also merge section header rows
+    aoa.forEach((row, i) => {
+      if (i > 1 && row[0] && row[0].v && String(row[0].v).startsWith('──')) {
+        merges.push({s:{r:i,c:0},e:{r:i,c:7}});
+      }
+    });
+    XLSX.utils.book_append_sheet(wb, makeStyledSheet(aoa, cols, merges), name);
+  }
+
+  addRosterSheet('MASTER ROSTER', `UNIT DRIVER TRAINING MASTER ROSTER  —  ${dateStr}`, sorted);
+  for (const plt of platoons) {
+    const sub = sorted.filter(s=>s.platoon===plt);
+    if (sub.length) addRosterSheet(`${plt} PLT`, `${plt} PLATOON  —  ${dateStr}`, sub);
+  }
+
+  // Vehicle summary sheet
+  const allVehs = [...new Set(sorted.flatMap(s=>s.vehicles))].sort();
+  const vsAoa = [
+    [xlsCell(`VEHICLE LICENSE SUMMARY BY PLATOON  —  ${dateStr}`, xls_title()),'','','','',''],
+    ['HQ','1ST PLT','2ND PLT','SUPPORT','TOTAL'].reduce((acc,h,i)=>{
+      if(i===0) acc.push(xlsCell('VEHICLE TYPE',xls_hdr()));
+      acc.push(xlsCell(h,xls_hdr())); return acc;
+    },[xlsCell('VEHICLE TYPE',xls_hdr())]),
+  ];
+  // Fix header row
+  vsAoa[1] = [xlsCell('VEHICLE TYPE',xls_hdr()),xlsCell('HQ',xls_hdr()),xlsCell('1ST PLT',xls_hdr()),xlsCell('2ND PLT',xls_hdr()),xlsCell('SUPPORT',xls_hdr()),xlsCell('TOTAL',xls_hdr())];
+  allVehs.forEach((v,i) => {
+    const alt = i%2===0;
+    const counts = platoons.map(p=>sorted.filter(s=>s.platoon===p&&s.vehicles.includes(v)).length);
+    const total  = counts.reduce((a,b)=>a+b,0);
+    vsAoa.push([xlsCell(v,xls_data(alt)),...counts.map(n=>xlsCell(n,xls_num(alt))),xlsCell(total,xls_num(alt))]);
+  });
+  const vsWs = XLSX.utils.aoa_to_sheet(vsAoa, {cellStyles:true});
+  vsWs['!cols'] = [28,9,9,9,9,9].map(w=>({wch:w}));
+  vsWs['!merges'] = [{s:{r:0,c:0},e:{r:0,c:5}}];
+  XLSX.utils.book_append_sheet(wb, vsWs, 'VEHICLE SUMMARY');
+
+  // Corrections tab
+  const assignEntries = Object.entries(sessionAssignments||{});
+  if (assignEntries.length) {
+    const corrAoa = [
+      [xlsCell(`SESSION CORRECTIONS  —  ${dateStr}`, xls_title()),'',''],
+      [xlsCell('GCSS NAME',xls_hdr()),xlsCell('ACTION',xls_hdr()),xlsCell('DETAIL',xls_hdr())],
+    ];
+    assignEntries.forEach(([name,asgn],i) => {
+      const detail = `${asgn.platoon} / ${asgn.rank}${asgn.linkedName&&asgn.linkedName!==name?' → '+asgn.linkedName:''}`;
+      const alt = i%2===0;
+      corrAoa.push([xlsCell(name,xls_data(alt)),xlsCell('ASSIGNED',xls_data(alt)),xlsCell(detail,xls_data(alt))]);
+    });
+    corrAoa.push([xlsCell('',''),xlsCell('',''),xlsCell('NOTE: Session-only. Update Troop Info to make permanent.',xls_footer())]);
+    const corrWs = XLSX.utils.aoa_to_sheet(corrAoa,{cellStyles:true});
+    corrWs['!cols']=[{wch:28},{wch:12},{wch:50}];
+    corrWs['!merges']=[{s:{r:0,c:0},e:{r:0,c:2}}];
+    XLSX.utils.book_append_sheet(wb, corrWs, 'CORRECTIONS');
+  }
+
+  const out = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+  return new Blob([out], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+
+function buildStyledExcelBlob_OpFinder(soldiers, label, dateStr) {
+  const wb   = XLSX.utils.book_new();
+  const list = sortSoldiers(soldiers);
+  const cols = [11,8,18,16,54,7,30,13];
+  const title = `OPERATOR FINDER: ${label}  —  ${dateStr}`;
+  const aoa   = buildRosterAOA(list, title);
+  const merges = [{s:{r:0,c:0},e:{r:0,c:7}},{s:{r:aoa.length-1,c:0},e:{r:aoa.length-1,c:7}}];
+  aoa.forEach((row,i) => {
+    if (i>1 && row[0] && row[0].v && String(row[0].v).startsWith('──'))
+      merges.push({s:{r:i,c:0},e:{r:i,c:7}});
+  });
+  XLSX.utils.book_append_sheet(wb, makeStyledSheet(aoa, cols, merges), 'FILTERED ROSTER');
+  const out = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+  return new Blob([out], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
 }
 
 function buildPDFBlob(soldiers, label, dateStr, vehFilter) {
