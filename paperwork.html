@@ -623,7 +623,7 @@ async function generate() {
     const names = allSoldiers.map(s => s.displayName);
 
     if (doWritten && doRoad) {
-      // Both — ZIP
+      // Both — ZIP + merged single PDF option
       document.getElementById('spin-msg').textContent = 'GENERATING ZIP...';
       const zip = new JSZip();
 
@@ -636,13 +636,33 @@ async function generate() {
       zip.file('RoadTest_DA6125.pdf', roadBlob);
 
       const zipBlob = await zip.generateAsync({type:'blob'});
+
+      // Also build merged single PDF
+      const { PDFDocument } = PDFLib;
+      const mergedDoc = await PDFDocument.create();
+      for (const srcBlob of [writtenBlob, roadBlob]) {
+        const srcBytes = await srcBlob.arrayBuffer();
+        const srcDoc   = await PDFDocument.load(srcBytes);
+        const pages    = await mergedDoc.copyPages(srcDoc, srcDoc.getPageIndices());
+        pages.forEach(p => mergedDoc.addPage(p));
+      }
+      const mergedBytes = await mergedDoc.save();
+      const mergedBlob  = new Blob([mergedBytes], {type:'application/pdf'});
+
       const row = document.getElementById('dl-row');
       row.innerHTML = '';
-      const btn = document.createElement('button');
-      btn.className = 'btn-dl';
-      btn.textContent = `📦 DOWNLOAD ZIP (${allSoldiers.length} SOLDIERS)`;
-      btn.onclick = () => triggerDownload(zipBlob, `TestingSession_${dateStamp()}.zip`);
-      row.appendChild(btn);
+
+      const btnZip = document.createElement('button');
+      btnZip.className = 'btn-dl';
+      btnZip.textContent = `📦 DOWNLOAD ZIP (SEPARATE FILES)`;
+      btnZip.onclick = () => triggerDownload(zipBlob, `TestingSession_${dateStamp()}.zip`);
+      row.appendChild(btnZip);
+
+      const btnPdf = document.createElement('button');
+      btnPdf.className = 'btn-dl';
+      btnPdf.textContent = `📄 DOWNLOAD SINGLE PDF (ALL DOCS)`;
+      btnPdf.onclick = () => triggerDownload(mergedBlob, `TestingSession_${dateStamp()}.pdf`);
+      row.appendChild(btnPdf);
 
     } else if (doWritten) {
       document.getElementById('spin-msg').textContent = 'GENERATING ANSWER SHEETS...';
