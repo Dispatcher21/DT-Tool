@@ -436,7 +436,7 @@ function renderSoldierList() {
     const name = fullName(s);
     const sel  = selectedNames.has(name);
     return `<div class="soldier-item ${sel?'selected':''}" onclick="toggleSoldier('${name.replace(/'/g,"\\'")}')">
-      <input type="checkbox" ${sel?'checked':''} onclick="event.stopPropagation()">
+      <input type="checkbox" ${sel?'checked':''} onclick="event.stopPropagation();toggleSoldier('${name.replace(/'/g,"\\'")}')">
       <span>${s.rank ? s.rank+' ' : ''}${name}</span>
       <span class="s-platoon">${s.platoon}</span>
     </div>`;
